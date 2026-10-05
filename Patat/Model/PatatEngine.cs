@@ -9,7 +9,9 @@ public class Snack
     public string Name { get; set; } = "";
     public int Stock { get; set; }
     public int FryMinutes { get; set; } = 4;
-    /// <summary>Snacks with the same (non-empty) group can go into the fryer together.</summary>
+    /// <summary>Number of pieces in one package; used to add a whole pack to the stock at once.</summary>
+    public int PackSize { get; set; } = 1;
+    /// <summary>Snacks
     public string FryGroup { get; set; } = "";
 }
 
@@ -50,12 +52,12 @@ public class PatatEngine
 
     public static List<Snack> DefaultSnacks() =>
     [
-        new() { Id = "patat", Emoji = "🍟", Name = "Patat (portie)", Stock = 6, FryMinutes = 6, FryGroup = "Patat" },
-        new() { Id = "frikandel", Emoji = "🌭", Name = "Frikandel", Stock = 10, FryMinutes = 4, FryGroup = "Vlees" },
-        new() { Id = "kroket", Emoji = "🥖", Name = "Kroket", Stock = 6, FryMinutes = 4, FryGroup = "Vlees" },
-        new() { Id = "kipcorn", Emoji = "🍗", Name = "Kipcorn", Stock = 4, FryMinutes = 5, FryGroup = "Vlees" },
-        new() { Id = "kaassouffle", Emoji = "🧀", Name = "Kaassoufflé", Stock = 4, FryMinutes = 3, FryGroup = "Kaas" },
-        new() { Id = "bitterbal", Emoji = "🟤", Name = "Bitterbal", Stock = 20, FryMinutes = 4, FryGroup = "" },
+        new() { Id = "patat", Emoji = "🍟", Name = "Patat (portie)", Stock = 6, FryMinutes = 6, FryGroup = "Patat", PackSize = 4 },
+        new() { Id = "frikandel", Emoji = "🌭", Name = "Frikandel", Stock = 10, FryMinutes = 4, FryGroup = "Vlees", PackSize = 10 },
+        new() { Id = "kroket", Emoji = "🥖", Name = "Kroket", Stock = 6, FryMinutes = 4, FryGroup = "Vlees", PackSize = 6 },
+        new() { Id = "kipcorn", Emoji = "🍗", Name = "Kipcorn", Stock = 4, FryMinutes = 5, FryGroup = "Vlees", PackSize = 4 },
+        new() { Id = "kaassouffle", Emoji = "🧀", Name = "Kaassoufflé", Stock = 4, FryMinutes = 3, FryGroup = "Kaas", PackSize = 4 },
+        new() { Id = "bitterbal", Emoji = "🟤", Name = "Bitterbal", Stock = 20, FryMinutes = 4, FryGroup = "", PackSize = 20 },
     ];
 
     public string ToJson() => JsonSerializer.Serialize(State, Json);
