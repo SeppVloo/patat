@@ -1,0 +1,10 @@
+<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+    </Found>
+    <NotFound>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <p class="pt-muted" style="text-align:center">Deze pagina bestaat niet. <a href="./">Naar de patat</a></p>
+        </LayoutView>
+    </NotFound>
+</Router>

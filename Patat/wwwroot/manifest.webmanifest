@@ -1,0 +1,22 @@
+{
+  "name": "Patat",
+  "short_name": "Patat",
+  "id": "./",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#fff3cf",
+  "theme_color": "#e8a400",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    },
+    {
+      "src": "icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    }
+  ]
+}

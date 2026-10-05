@@ -4,11 +4,11 @@
 
 ## Overzicht
 - Gezinsapp om snacks bij de patat te bestellen. Iedereen bestelt op zijn **eigen apparaat**; de **snackbakker** ziet een overzicht en beheert de voorraad.
-- Route `/patat` (bestellen), `/patat/bakker` (bak-overzicht), `/patat/voorraad` (voorraadbeheer). Tegel in de GameCenter.
-- Nederlandstalig, werkt op laptop, iPad en iPhone. Gehost op GitHub Pages samen met de rest van de site (geen eigen server).
+- Route `/` (bestellen), `/bakker` (bak-overzicht), `/voorraad` (voorraadbeheer).
+- Nederlandstalig, werkt op laptop, iPad en iPhone (installeerbaar als PWA). Gehost op GitHub Pages: https://seppvloo.github.io/Patat/ (geen eigen server).
 
-## Architectuur (zelfde aanpak als 2048)
-- **Razor Class Library** `Patat`, gehost door `PongWeb` (`App.razor` → `ExtraGames`, `index.html` laadt `_content/Patat/patat.css`).
+## Architectuur
+- Eigen repo/solution (`Patat.slnx`), standalone **Blazor WebAssembly**-app `Patat/Patat.csproj` (.NET 11). `App.razor`, `MainLayout.razor`, `Program.cs`, `wwwroot/index.html` (laadt `patat.css`). Paden in `Patat/` hieronder.
 - `Model/PatatEngine.cs`: pure logica, geen UI. `PatatState` = snacks, bestellingen, mandjes (batches), `Open`, `Rejected`.
 - `Pages/PatatPage.razor`: instellen, bestellen, tabs, JS-interop en synchronisatie.
 - `Components/BakkerView.razor`, `Components/VoorraadView.razor`, `Components/Help.razor` (❓ Hoe werkt het?).
@@ -37,3 +37,5 @@
 
 ## Changelog
 - **Basis:** bestellen per apparaat, bakker-overzicht met mandjes per frituurgroep en timers, voorraadbeheer, synchronisatie via Trystero, in-app hulp.
+- **Eigen repo:** losgetrokken uit SeppsGameCenter (geschiedenis behouden) naar standalone Blazor WebAssembly-app met eigen solution, GitHub Pages-workflow en PWA-manifest. Routes nu `/`, `/bakker`, `/voorraad`. JS-interop afgeschermd met try/catch (`JsVoid`/`JsGet`).
+- **Deploy:** GitHub Pages-workflow zet bij geen CNAME de `<base href>` op `/<repo-naam>/`.
