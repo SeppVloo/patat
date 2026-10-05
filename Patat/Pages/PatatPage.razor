@@ -119,6 +119,7 @@
     private Dictionary<string, int> _draft = [];
 
     private string CurrentTab => (Tab ?? "").ToLowerInvariant();
+    private string StateKey => KeyState + "." + _code.Trim().ToLowerInvariant();
     private bool Connected => _bakker || _hasState;
     private string StatusText => _bakker ? $"👨‍🍳 Bakker · {_peers} verbonden" : _hasState ? "🟢 Verbonden" : "🔴 Niet verbonden";
 
@@ -147,7 +148,7 @@
     {
         if (_js is null || string.IsNullOrWhiteSpace(_code)) return;
         _hasState = false;
-        await JsVoid(_js, "start", _self, _code, _bakker);
+        await JsVoid(_js, "start", _self, _code, _bakker, StateKey);
     }
 
     private async Task SaveSetup()
@@ -234,11 +235,14 @@
     private async Task LoadState()
     {
         if (_js is null) return;
-        var json = await JsGet<string?>(_js, "load", KeyState);
+        _engine.Reset();
+        // State is stored per family code; fall back to the old device-wide key (before per-code storage).
+        var json = await JsGet<string?>(_js, "load", StateKey);
+        if (string.IsNullOrWhiteSpace(json)) json = await JsGet<string?>(_js, "load", KeyState);
         if (!_engine.Load(json))
         {
             // Keep the unreadable state safe instead of overwriting it with the default list.
-            await JsVoid(_js, "save", KeyState + ".backup-" + DateTime.UtcNow.ToString("yyyyMMddHHmmss"), json);
+            await JsVoid(_js, "save", StateKey + ".backup-" + DateTime.UtcNow.ToString("yyyyMMddHHmmss"), json);
             Show("⚠ Opgeslagen voorraad kon niet gelezen worden; er is een reservekopie bewaard.", true);
         }
     }
@@ -246,8 +250,9 @@
     private async Task Publish()
     {
         if (_js is null || !_bakker) return;
+        _engine.State.Version++;
         var json = _engine.ToJson();
-        await JsVoid(_js, "save", KeyState, json);
+        await JsVoid(_js, "save", StateKey, json);
         await JsVoid(_js, "broadcast", json, null);
         StateHasChanged();
     }
@@ -280,7 +285,9 @@
     public async Task OnState(string json)
     {
         if (_bakker) return;
-        _engine.Load(json);
+        if (!_engine.Load(json)) return;
+        // Every device keeps the latest state of its family, so any device can take over as baker.
+        await JsVoid(_js, "save", StateKey, json);
         _hasState = true;
         if (_pending is not null)
         {
@@ -330,9 +337,16 @@
     }
 
     [JSInvokable]
-    public async Task OnHello(string peer)
+    public async Task OnHello(string peer, string? json)
     {
         if (_js is null || !_bakker) return;
+        if (_engine.TryAdopt(json))
+        {
+            // Another device had a newer version (e.g. the baker used a different device before).
+            _engine.State.Version--;
+            await Publish();
+            return;
+        }
         await JsVoid(_js, "broadcast", _engine.ToJson(), peer);
     }
 

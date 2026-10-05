@@ -34,6 +34,8 @@ public class Batch
 
 public class PatatState
 {
+    /// <summary>Incremented on every change by the baker; the highest version wins when devices meet.</summary>
+    public long Version { get; set; }
     public bool Open { get; set; } = true;
     public List<Snack> Snacks { get; set; } = [];
     public List<Order> Orders { get; set; } = [];
@@ -61,6 +63,22 @@ public class PatatEngine
     ];
 
     public string ToJson() => JsonSerializer.Serialize(State, Json);
+
+    public void Reset() => State = new() { Snacks = DefaultSnacks() };
+
+    /// <summary>Takes over the given state if it is newer than the current one. Returns true if adopted.</summary>
+    public bool TryAdopt(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return false;
+        try
+        {
+            var other = JsonSerializer.Deserialize<PatatState>(json, Json);
+            if (other is null || other.Version <= State.Version) return false;
+            State = other;
+            return true;
+        }
+        catch (Exception ex) when (ex is JsonException or NotSupportedException) { return false; }
+    }
 
     /// <summary>Returns false if the json is present but unreadable (state is then left untouched).</summary>
     public bool Load(string? json)
