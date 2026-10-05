@@ -2,7 +2,8 @@
 // Everybody with the same family code joins one Trystero room (signalling via public MQTT brokers).
 // The snackbakker's device is the source of truth: it keeps the state in localStorage and broadcasts it.
 // Other devices only send their order and show the state they receive.
-import { joinRoom } from "https://esm.sh/trystero@0.21.8/mqtt";
+// Trystero is loaded lazily: if the CDN fails, localStorage (the stock!) must still be readable.
+const TRYSTERO = "https://esm.sh/trystero@0.21.8/mqtt";
 
 const APP_ID = "sepp-patat-v1";
 let room = null, dotnet = null, isHost = false;
@@ -11,10 +12,12 @@ let sendState, sendOrder, sendCancel, sendHello;
 function peers() { return room ? Object.keys(room.getPeers()).length : 0; }
 function call(name, ...args) { dotnet?.invokeMethodAsync(name, ...args).catch(() => { }); }
 
-export function start(ref, code, host) {
+export async function start(ref, code, host) {
     leave();
     dotnet = ref; isHost = host;
-    room = joinRoom({ appId: APP_ID }, "fam-" + code.trim().toLowerCase());
+    let joinRoom;
+    try { ({ joinRoom } = await import(TRYSTERO)); } catch (e) { console.warn("Trystero laden mislukt", e); return; }
+    room = joinRoom(
     let onState, onOrder, onCancel, onHello;
     [sendState, onState] = room.makeAction("state");
     [sendOrder, onOrder] = room.makeAction("order");

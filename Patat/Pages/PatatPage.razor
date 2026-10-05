@@ -130,7 +130,7 @@
         _code = await JsGet<string?>(_js, "load", KeyCode) ?? "";
         _bakker = await JsGet<string?>(_js, "load", KeyBakker) == "1";
         (_nameInput, _codeInput, _bakkerInput) = (_name, _code, _bakker);
-        if (_bakker) _engine.Load(await JsGet<string?>(_js, "load", KeyState));
+        if (_bakker) await LoadState();
         var pending = await JsGet<string?>(_js, "load", KeyPending);
         if (!string.IsNullOrEmpty(pending))
         {
@@ -159,7 +159,7 @@
         await JsVoid(_js, "save", KeyCode, _code);
         await JsVoid(_js, "save", KeyBakker, _bakker ? "1" : null);
         _editSetup = false;
-        if (_bakker) _engine.Load(await JsGet<string?>(_js, "load", KeyState));
+        if (_bakker) await LoadState();
         if (reconnect) await Connect();
         _draftTouched = false;
         LoadDraft();
@@ -229,6 +229,18 @@
         if (_js is null) return;
         if (_pending is not null) await JsVoid(_js, "order", System.Text.Json.JsonSerializer.Serialize(_pending, PatatEngine.Json));
         else if (_pendingCancel) await JsVoid(_js, "cancel", _name);
+    }
+
+    private async Task LoadState()
+    {
+        if (_js is null) return;
+        var json = await JsGet<string?>(_js, "load", KeyState);
+        if (!_engine.Load(json))
+        {
+            // Keep the unreadable state safe instead of overwriting it with the default list.
+            await JsVoid(_js, "save", KeyState + ".backup-" + DateTime.UtcNow.ToString("yyyyMMddHHmmss"), json);
+            Show("⚠ Opgeslagen voorraad kon niet gelezen worden; er is een reservekopie bewaard.", true);
+        }
     }
 
     private async Task Publish()

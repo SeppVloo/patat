@@ -62,10 +62,12 @@ public class PatatEngine
 
     public string ToJson() => JsonSerializer.Serialize(State, Json);
 
-    public void Load(string? json)
+    /// <summary>Returns false if the json is present but unreadable (state is then left untouched).</summary>
+    public bool Load(string? json)
     {
-        if (string.IsNullOrWhiteSpace(json)) return;
-        try { State = JsonSerializer.Deserialize<PatatState>(json, Json) ?? State; } catch (JsonException) { }
+        if (string.IsNullOrWhiteSpace(json)) return true;
+        try { State = JsonSerializer.Deserialize<PatatState>(json, Json) ?? State; return true; }
+        catch (Exception ex) when (ex is JsonException or NotSupportedException) { return false; }
     }
 
     public Snack? Find(string id) => State.Snacks.FirstOrDefault(s => s.Id == id);
