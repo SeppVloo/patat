@@ -72,7 +72,7 @@
                         var max = _engine.MaxFor(s.Id, _name);
                         var n = _draft.GetValueOrDefault(s.Id);
                         <div class="pt-snack @(max == 0 ? "empty" : "")">
-                            <span class="pt-emoji">@s.Emoji</span>
+                            <span class="pt-emoji"><SnackIcon Snack="s" Size="40" /></span>
                             <span class="pt-name">@s.Name<small>@(max == 0 ? "op" : $"nog {max - n} over")</small></span>
                             <button class="pt-round" @onclick="() => Change(s.Id, -1)" disabled="@(n == 0)">−</button>
                             <b class="pt-count">@n</b>
@@ -109,7 +109,8 @@
         KeyState = "patat.state", KeyPending = "patat.pending";
 
     private readonly PatatEngine _engine = new();
-    private IJSObjectReference? _js;
+    private IJSObjectReference? _js, _db;
+    private bool _dbOn, _dbSeen;
     private DotNetObjectReference<PatatPage>? _self;
     private bool _ready, _bakker, _hasState, _editSetup, _bakkerInput, _msgError, _pendingCancel, _draftTouched;
     private string _name = "", _code = "", _nameInput = "", _codeInput = "", _note = "";
@@ -121,12 +122,13 @@
     private string CurrentTab => (Tab ?? "").ToLowerInvariant();
     private string StateKey => KeyState + "." + _code.Trim().ToLowerInvariant();
     private bool Connected => _bakker || _hasState;
-    private string StatusText => _bakker ? $"👨‍🍳 Bakker · {_peers} verbonden" : _hasState ? "🟢 Verbonden" : "🔴 Niet verbonden";
+    private string StatusText => (_dbOn ? "☁ " : "") + (_bakker ? $"👨‍🍳 Bakker · {_peers} verbonden" : _hasState ? "🟢 Verbonden" : "🔴 Niet verbonden");
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
         _js = await JsGet<IJSObjectReference>(JS, "import", "./patat.js");
+        _db = await JsGet<IJSObjectReference>(JS, "import", "./patat-db.js");
         _name = await JsGet<string?>(_js, "load", KeyName) ?? "";
         _code = await JsGet<string?>(_js, "load", KeyCode) ?? "";
         _bakker = await JsGet<string?>(_js, "load", KeyBakker) == "1";
@@ -149,6 +151,9 @@
         if (_js is null || string.IsNullOrWhiteSpace(_code)) return;
         _hasState = false;
         await JsVoid(_js, "start", _self, _code, _bakker, StateKey);
+        _dbSeen = false;
+        _dbOn = await JsGet<bool>(_db, "start", _self, _code, _bakker);
+        StateHasChanged();
     }
 
     private async Task SaveSetup()
@@ -230,6 +235,9 @@
         if (_js is null) return;
         if (_pending is not null) await JsVoid(_js, "order", System.Text.Json.JsonSerializer.Serialize(_pending, PatatEngine.Json));
         else if (_pendingCancel) await JsVoid(_js, "cancel", _name);
+        if (!_dbOn) return;
+        if (_pending is not null) await JsVoid(_db, "order", System.Text.Json.JsonSerializer.Serialize(_pending, PatatEngine.Json));
+        else if (_pendingCancel) await JsVoid(_db, "cancel", _name);
     }
 
     private async Task LoadState()
@@ -254,7 +262,49 @@
         var json = _engine.ToJson();
         await JsVoid(_js, "save", StateKey, json);
         await JsVoid(_js, "broadcast", json, null);
+        if (_dbOn) await JsVoid(_db, "save", json);
         StateHasChanged();
+    }
+
+    [JSInvokable]
+    public async Task OnDbState(string json)
+    {
+        if (!_bakker)
+        {
+            if (!string.IsNullOrWhiteSpace(json)) await OnState(json);
+            return;
+        }
+        var first = !_dbSeen;
+        _dbSeen = true;
+        if (_engine.TryAdopt(json))
+        {
+            // The database has a newer version (e.g. changed on another baker device).
+            await JsVoid(_js, "save", StateKey, json);
+            await JsVoid(_js, "broadcast", json, null);
+            LoadDraft();
+            StateHasChanged();
+        }
+        else if (first)
+        {
+            // Database empty or older than this device: upload our state (also migrates existing local stock).
+            await Publish();
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnDbInbox(string key, string json)
+    {
+        if (!_bakker) return;
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            var type = root.TryGetProperty("type", out var t) ? t.GetString() : null;
+            if (type == "order" && root.TryGetProperty("json", out var o) && o.GetString() is { } orderJson) await OnOrder(orderJson);
+            else if (type == "cancel" && root.TryGetProperty("person", out var p) && p.GetString() is { } person) await OnCancel(person);
+        }
+        catch (System.Text.Json.JsonException) { }
+        await JsVoid(_db, "done", key);
     }
 
     private string Describe(Order o) => string.Join(", ", o.Items.Select(kv => $"{kv.Value}× {_engine.Find(kv.Key)?.Name}"))
@@ -354,7 +404,7 @@
     public void OnPeers(int n)
     {
         _peers = n;
-        if (n == 0 && !_bakker) _hasState = false;
+        if (n == 0 && !_bakker && !_dbOn) _hasState = false;
         StateHasChanged();
     }
 
@@ -364,6 +414,11 @@
         {
             await JsVoid(_js, "leave");
             try { await _js.DisposeAsync(); } catch (JSDisconnectedException) { }
+        }
+        if (_db is not null)
+        {
+            await JsVoid(_db, "stop");
+            try { await _db.DisposeAsync(); } catch (JSDisconnectedException) { }
         }
         _self?.Dispose();
     }

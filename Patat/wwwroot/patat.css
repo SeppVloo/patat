@@ -84,6 +84,21 @@
 	.pt-stock-row .pt-stepper { grid-column: 1 / 4; flex-wrap: wrap; }
 }
 
+/* Snack icons + picker */
+.pt-icon { display: inline-block; vertical-align: middle; flex: none; }
+.pt-icon.emoji { line-height: 1; text-align: center; }
+.pt-emoji { display: flex; align-items: center; justify-content: center; }
+.pt-iconbtn { width: 48px; height: 44px; padding: 2px; border: 1px solid #cfd4dc; border-radius: 8px; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.pt-iconbtn:hover { border-color: var(--pt-primary); }
+.pt-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 6px; padding: 10px; margin: 0 0 6px; background: #f8f9fb; border: 1px solid var(--pt-border); border-radius: var(--pt-radius); }
+.pt-pick { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 4px; border: 1px solid transparent; border-radius: 8px; background: #fff; cursor: pointer; font-family: inherit; color: var(--pt-text); }
+.pt-pick small { font-size: .7rem; color: var(--pt-muted); text-align: center; line-height: 1.1; }
+.pt-pick:hover { border-color: #cfd4dc; }
+.pt-pick.active { border-color: var(--pt-primary); background: var(--pt-primary-soft); }
+.pt-pick .pt-input.emoji { width: 44px; padding: 4px; }
+.pt-items { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.pt-item, .pt-total { display: inline-flex; align-items: center; gap: 4px; }
+
 /* Page + Blazor loading/error UI */
 html, body { margin: 0; background: #f5f6f8; }
 #blazor-error-ui { display: none; position: fixed; bottom: 0; left: 0; width: 100%; padding: .6rem 1rem; background: #fecaca; color: #000; z-index: 1000; box-sizing: border-box; }

@@ -20,7 +20,8 @@
 - Het apparaat van de **snackbakker** is de bron van waarheid en stuurt na elke wijziging de hele state (JSON) naar iedereen. Nieuwe peers krijgen direct de state.
 - De state hoort bij de **gezinscode**, niet bij een apparaat: elk apparaat bewaart de laatst ontvangen state in `patat.state.<code>`. `PatatState.Version` wordt bij elke wijziging van de bakker opgehoogd. Een niet-bakker stuurt bij `hello` zijn bewaarde state mee; de bakker neemt die over als hij een hogere `Version` heeft. Zo kan de bakker op een ander apparaat verder.
 - Andere apparaten sturen alleen `order` (JSON `Order`) of `cancel` (naam). Een verzonden bestelling blijft *pending* (`patat.pending`) en wordt opnieuw verstuurd bij elke ontvangen state, tot de state die bestelling (zelfde `Stamp`) bevat of in `Rejected` staat.
-- Er hoort precies één snackbakker te zijn. Zonder online snackbakker kan niemand bestellen ("Wachten op de snackbakker…").
+- **Database (optioneel, Firebase Realtime Database):** als `wwwroot/firebase-config.js` is ingevuld, logt elk apparaat anoniem in en gebruikt `families/<sha256("patat:"+code)>/state` (state-JSON) en `/inbox` (`{type:"order",json}` of `{type:"cancel",person}`). De bakker verwerkt de inbox, schrijft de nieuwe state en verwijdert het inbox-item. Iedereen leest de state live, ook zonder online bakker-peer. Een nieuwere database-state (`Version`) wordt door de bakker overgenomen; is de database leeg, dan schrijft de bakker zijn lokale state. Zonder config (standaard `null`) werkt alles zoals hiervoor via Trystero. Zie `FIREBASE.md`.
+- Er hoort precies één snackbakker te zijn. Zonder online snackbakker kan niemand bestellen ("Wachten op de snackbakker…"), behalve in databasemodus: dan komen bestellingen in de inbox en verwerkt de bakker ze zodra hij de app opent.
 
 ## Regels
 - Eén bestelling per persoon (naam, hoofdletterongevoelig); opnieuw bestellen vervangt de vorige.
@@ -28,6 +29,7 @@
 - Bestellen kan alleen als `Open` aan staat (schakelaar op het bak-scherm).
 - **Nieuwe ronde** wist bestellingen, mandjes en weigeringen; voorraad blijft zoals hij is.
 - Elke snack heeft **stuks per pak** (`PackSize`, standaard 1). Op het voorraadscherm telt de knop **+ pak (N)** in één keer een heel pak bij de voorraad op.
+- Elke snack heeft een **icoon** (`Icon`): sleutel uit de eigen SVG-catalogus `SnackIcons` (patat, frikandel, frikandel speciaal, kroket, kipcorn, kaassoufflé, bitterbal, berenklauw, loempia, mexicano, viandel, bamischijf, nasibal, kipnuggets, burger, saus, snack), `emoji` (eigen emoji) of leeg = automatisch raden op naam. Kiezen via de icoonknop op het voorraadscherm.
 
 ## Samen bakken
 - Elke snack heeft een baktijd (minuten) en een **frituurgroep**. Snacks met dezelfde groep (hoofdletterongevoelig) gaan samen in één mandje; lege groep = altijd los.
@@ -46,4 +48,5 @@
 - **Pakken + nieuwe stijl:** snacks hebben stuks per pak met een *+ pak*-knop om de voorraad snel op te hogen. Professionelere, rustige vormgeving (neutrale kleuren, subtiele schaduwen, segment-tabs).
 - **Voorraad blijft na redeploy:** Trystero lazy geladen (opslag werkt los van de CDN); onleesbare state krijgt een reservekopie i.p.v. een stille reset.
 - **Eigen domein:** `wwwroot/CNAME` = `patat.vloo.nl`; site draait daardoor vanaf `/` (base href blijft `/`).
-- **Voorraad per gezinscode:** state opgeslagen per gezinscode op elk apparaat met `Version`; de bakker neemt een nieuwere versie van andere apparaten over. Fix: afgebroken `joinRoom`-regel in `patat.js` hersteld.
+in `patat.js` hersteld.
+- **Iconen + database:** eigen SVG-iconen per snack met kiezer en automatisch raden voor nieuwe snacks; optionele Firebase Realtime Database als gedeelde opslag per gezinscode (inbox voor bestellingen), met Trystero als terugval.

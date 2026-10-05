@@ -1,0 +1,18 @@
+@* Draws the snack's SVG icon, or falls back to its emoji when no icon matches. *@
+@if (Info is { } i)
+{
+    <svg class="pt-icon" style="width:@(Size)px;height:@(Size)px" viewBox="0 0 64 64" role="img" aria-label="@i.Title">@((MarkupString)i.Svg)</svg>
+}
+else
+{
+    <span class="pt-icon emoji" style="font-size:@(Size * 0.8)px">@Snack?.Emoji</span>
+}
+
+@code {
+    [Parameter] public Snack? Snack { get; set; }
+    /// <summary>Show this icon key instead of the snack's own (used by the picker).</summary>
+    [Parameter] public string? IconKey { get; set; }
+    [Parameter] public int Size { get; set; } = 36;
+
+    private SnackIcons.IconInfo? Info => IconKey is not null ? SnackIcons.Find(IconKey) : Snack is null ? null : SnackIcons.For(Snack);
+}

@@ -26,7 +26,7 @@
                     <ul>
                         @foreach (var (s, n) in b.Items)
                         {
-                            <li><b>@n×</b> @s.Emoji @s.Name</li>
+                            <li><b>@n×</b> <SnackIcon Snack="s" Size="22" /> @s.Name</li>
                         }
                     </ul>
                     @if (st.Done)
@@ -59,7 +59,13 @@
             {
                 <li>
                     <b>@o.Person</b>
-                    <span>@string.Join(", ", o.Items.Select(kv => $"{kv.Value}× {Engine.Find(kv.Key)?.Emoji} {Engine.Find(kv.Key)?.Name}"))</span>
+                    <span class="pt-items">
+                        @foreach (var (id, n) in o.Items)
+                        {
+                            var s = Engine.Find(id);
+                            <span class="pt-item">@(n)× <SnackIcon Snack="s" Size="20" /> @s?.Name</span>
+                        }
+                    </span>
                     @if (!string.IsNullOrEmpty(o.Note))
                     {
                         <i>“@o.Note”</i>
@@ -73,7 +79,7 @@
             @foreach (var (id, n) in Engine.Totals())
             {
                 var s = Engine.Find(id);
-                <span class="pt-total">@n× @s?.Emoji @s?.Name</span>
+                <span class="pt-total">@(n)× <SnackIcon Snack="s" Size="20" /> @s?.Name</span>
             }
         </div>
         <button class="pt-btn big" @onclick="Finish">🍽 Nieuwe ronde (bestellingen wissen)</button>

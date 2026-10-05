@@ -6,12 +6,14 @@ public class Snack
 {
     public string Id { get; set; } = Guid.NewGuid().ToString("N")[..8];
     public string Emoji { get; set; } = "🍴";
+    /// <summary>Key of a drawn icon in <see cref="SnackIcons"/>; empty = guess from the name, else fall back to Emoji.</summary>
+    public string Icon { get; set; } = "";
     public string Name { get; set; } = "";
     public int Stock { get; set; }
     public int FryMinutes { get; set; } = 4;
     /// <summary>Number of pieces in one package; used to add a whole pack to the stock at once.</summary>
     public int PackSize { get; set; } = 1;
-    /// <summary>Snacks
+    /// <summary>Snacks with the same (non-empty) group can go into the fryer together.</summary>
     public string FryGroup { get; set; } = "";
 }
 
@@ -54,12 +56,12 @@ public class PatatEngine
 
     public static List<Snack> DefaultSnacks() =>
     [
-        new() { Id = "patat", Emoji = "🍟", Name = "Patat (portie)", Stock = 6, FryMinutes = 6, FryGroup = "Patat", PackSize = 4 },
-        new() { Id = "frikandel", Emoji = "🌭", Name = "Frikandel", Stock = 10, FryMinutes = 4, FryGroup = "Vlees", PackSize = 10 },
-        new() { Id = "kroket", Emoji = "🥖", Name = "Kroket", Stock = 6, FryMinutes = 4, FryGroup = "Vlees", PackSize = 6 },
-        new() { Id = "kipcorn", Emoji = "🍗", Name = "Kipcorn", Stock = 4, FryMinutes = 5, FryGroup = "Vlees", PackSize = 4 },
-        new() { Id = "kaassouffle", Emoji = "🧀", Name = "Kaassoufflé", Stock = 4, FryMinutes = 3, FryGroup = "Kaas", PackSize = 4 },
-        new() { Id = "bitterbal", Emoji = "🟤", Name = "Bitterbal", Stock = 20, FryMinutes = 4, FryGroup = "", PackSize = 20 },
+        new() { Id = "patat", Icon = "patat", Emoji = "🍟", Name = "Patat (portie)", Stock = 6, FryMinutes = 6, FryGroup = "Patat", PackSize = 4 },
+        new() { Id = "frikandel", Icon = "frikandel", Emoji = "🌭", Name = "Frikandel", Stock = 10, FryMinutes = 4, FryGroup = "Vlees", PackSize = 10 },
+        new() { Id = "kroket", Icon = "kroket", Emoji = "🥖", Name = "Kroket", Stock = 6, FryMinutes = 4, FryGroup = "Vlees", PackSize = 6 },
+        new() { Id = "kipcorn", Icon = "kipcorn", Emoji = "🍗", Name = "Kipcorn", Stock = 4, FryMinutes = 5, FryGroup = "Vlees", PackSize = 4 },
+        new() { Id = "kaassouffle", Icon = "kaassouffle", Emoji = "🧀", Name = "Kaassoufflé", Stock = 4, FryMinutes = 3, FryGroup = "Kaas", PackSize = 4 },
+        new() { Id = "bitterbal", Icon = "bitterbal", Emoji = "🟤", Name = "Bitterbal", Stock = 20, FryMinutes = 4, FryGroup = "", PackSize = 20 },
     ];
 
     public string ToJson() => JsonSerializer.Serialize(State, Json);

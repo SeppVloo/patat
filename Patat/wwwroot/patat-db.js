@@ -1,0 +1,53 @@
+// Shared stock database (Firebase Realtime Database). The state of a family lives at
+// families/<sha256(family code)>/state (JSON string) and the inbox of orders/cancels at .../inbox.
+// The baker consumes the inbox, applies the rules in PatatEngine and writes the new state.
+// The Firebase SDK is loaded lazily from gstatic, so the app still works when it is unreachable.
+import config from "./firebase-config.js";
+
+const SDK = "https://www.gstatic.com/firebasejs/11.0.2/";
+let db = null, fb = null, stateRef = null, inboxRef = null, unsubs = [], dotnet = null;
+
+function call(name, ...args) { dotnet?.invokeMethodAsync(name, ...args).catch(() => { }); }
+
+async function familyId(code) {
+    const bytes = new TextEncoder().encode("patat:" + code.trim().toLowerCase());
+    const hash = await crypto.subtle.digest("SHA-256", bytes);
+    return [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+export function enabled() { return !!(config && config.databaseURL); }
+
+export async function start(ref, code, host) {
+    stop();
+    if (!enabled()) return false;
+    dotnet = ref;
+    try {
+        if (!db) {
+            const [app, auth, database] = await Promise.all([
+                import(SDK + "firebase-app.js"), import(SDK + "firebase-auth.js"), import(SDK + "firebase-database.js")]);
+            const fbApp = app.initializeApp(config);
+            await auth.signInAnonymously(auth.getAuth(fbApp));
+            db = database.getDatabase(fbApp);
+            fb = database;
+        }
+        const id = await familyId(code);
+        stateRef = fb.ref(db, `families/${id}/state`);
+        inboxRef = fb.ref(db, `families/${id}/inbox`);
+        unsubs.push(fb.onValue(stateRef, snap => call("OnDbState", snap.val() ?? "")));
+        if (host) unsubs.push(fb.onChildAdded(inboxRef, snap => call("OnDbInbox", snap.key, JSON.stringify(snap.val()))));
+        return true;
+    } catch (e) {
+        console.warn("Database niet bereikbaar", e);
+        return false;
+    }
+}
+
+export function stop() {
+    unsubs.forEach(u => { try { u(); } catch { } });
+    unsubs = []; stateRef = inboxRef = null;
+}
+
+export async function save(json) { if (stateRef) await fb.set(stateRef, json); }
+export async function order(json) { if (inboxRef) await fb.push(inboxRef, { type: "order", json }); }
+export async function cancel(person) { if (inboxRef) await fb.push(inboxRef, { type: "cancel", person }); }
+export async function done(key) { if (inboxRef) await fb.remove(fb.child(inboxRef, key)); }

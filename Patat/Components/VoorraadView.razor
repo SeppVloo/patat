@@ -8,7 +8,7 @@
         @foreach (var s in Engine.State.Snacks)
         {
             <div class="pt-stock-row @(s.Stock <= 0 ? "empty" : s.Stock <= 2 ? "low" : "")" @key="s.Id">
-                <input class="pt-input emoji" @bind="s.Emoji" @bind:after="Changed" maxlength="4" />
+                <button class="pt-iconbtn" title="Icoon kiezen" @onclick="() => _pick = _pick == s.Id ? null : s.Id"><SnackIcon Snack="s" Size="34" /></button>
                 <input class="pt-input" @bind="s.Name" @bind:after="Changed" maxlength="30" />
                 <span class="pt-stepper">
                     <button class="pt-round" @onclick="() => Add(s, -1)" disabled="@(s.Stock <= 0)">−</button>
@@ -21,6 +21,20 @@
                 <input class="pt-input" @bind="s.FryGroup" @bind:after="Changed" placeholder="los" maxlength="20" />
                 <button class="pt-round danger" title="Verwijderen" @onclick="() => Remove(s)">🗑</button>
             </div>
+            @if (_pick == s.Id)
+            {
+                <div class="pt-picker">
+                    <button class="pt-pick @(s.Icon == "" ? "active" : "")" title="Automatisch op naam" @onclick="() => SetIcon(s, string.Empty)"><SnackIcon IconKey="@AutoKey(s)" Size="30" /><small>Auto</small></button>
+                    @foreach (var i in SnackIcons.All)
+                    {
+                        <button class="pt-pick @(s.Icon == i.Key ? "active" : "")" title="@i.Title" @onclick="() => SetIcon(s, i.Key)"><SnackIcon IconKey="@i.Key" Size="30" /><small>@i.Title</small></button>
+                    }
+                    <span class="pt-pick @(s.Icon == SnackIcons.EmojiKey ? "active" : "")">
+                        <input class="pt-input emoji" @bind="s.Emoji" @bind:after="() => SetIcon(s, SnackIcons.EmojiKey)" maxlength="4" title="Eigen emoji" />
+                        <small>Emoji</small>
+                    </span>
+                </div>
+            }
         }
     </div>
     <div class="pt-row">
@@ -37,6 +51,16 @@
     [Parameter, EditorRequired] public PatatEngine Engine { get; set; } = default!;
     [Parameter] public Func<Task> Changed { get; set; } = () => Task.CompletedTask;
 
+    private string? _pick;
+
+    private static string AutoKey(Snack s) => SnackIcons.Guess(s.Name) is { Length: > 0 } k ? k : "snack";
+
+    private Task SetIcon(Snack s, string key)
+    {
+        s.Icon = key;
+        return Changed();
+    }
+
     private Task Add(Snack s, int delta)
     {
         s.Stock = Math.Max(0, s.Stock + delta);
@@ -46,6 +70,7 @@
     private Task AddSnack()
     {
         Engine.State.Snacks.Add(new Snack { Name = "Nieuwe snack" });
+        _pick = Engine.State.Snacks[^1].Id;
         return Changed();
     }
 
