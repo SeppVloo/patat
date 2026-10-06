@@ -15,6 +15,8 @@ public class Snack
     public int PackSize { get; set; } = 1;
     /// <summary>Snacks with the same (non-empty) group can go into the fryer together.</summary>
     public string FryGroup { get; set; } = "";
+    /// <summary>Barcodes (EAN) of packages of this snack; scanning one adds a whole pack to the stock.</summary>
+    public List<string> Barcodes { get; set; } = [];
 }
 
 public class Order
@@ -136,6 +138,8 @@ public class PatatEngine
     }
 
     public Snack? Find(string id) => State.Snacks.FirstOrDefault(s => s.Id == id);
+
+    public Snack? ByBarcode(string code) => State.Snacks.FirstOrDefault(s => s.Barcodes.Contains(code));
 
     public Order? OrderOf(string person) =>
         State.Orders.FirstOrDefault(o => string.Equals(o.Person, person, StringComparison.OrdinalIgnoreCase));

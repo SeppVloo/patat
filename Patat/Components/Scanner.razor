@@ -1,0 +1,129 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<div class="pt-scan">
+    @if (!_on)
+    {
+        <button class="pt-btn" @onclick="Start">📷 Streepjescode scannen</button>
+    }
+    else
+    {
+        <div class="pt-scan-box">
+            <video @ref="_video" muted playsinline></video>
+            <button class="pt-btn ghost small" @onclick="Stop">Stoppen</button>
+        </div>
+    }
+    @if (!string.IsNullOrEmpty(_msg))
+    {
+        <p class="pt-msg @(_error ? "error" : "")">@_msg</p>
+    }
+    @if (_unknown is not null)
+    {
+        <div class="pt-scan-new">
+            <b>Onbekende code @_unknown</b>
+            <label>Hoort bij
+                <select class="pt-input" @bind="_target">
+                    <option value="">➕ Nieuwe snack</option>
+                    @foreach (var s in Engine.State.Snacks.OrderBy(x => x.Name))
+                    {
+                        <option value="@s.Id">@s.Name</option>
+                    }
+                </select>
+            </label>
+            @if (_target == "")
+            {
+                <label>Naam <input class="pt-input" @bind="_newName" maxlength="30" /></label>
+            }
+            <label>Stuks per pak <input class="pt-input num" type="number" min="1" max="200" @bind="_pack" /></label>
+            <div class="pt-row">
+                <button class="pt-btn" @onclick="Link" disabled="@(_target == "" && string.IsNullOrWhiteSpace(_newName))">Opslaan en pak toevoegen</button>
+                <button class="pt-btn ghost" @onclick="() => _unknown = null">Overslaan</button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public PatatEngine Engine { get; set; } = default!;
+    [Parameter] public Func<Task> Changed { get; set; } = () => Task.CompletedTask;
+
+    private IJSObjectReference? _js;
+    private DotNetObjectReference<Scanner>? _self;
+    private ElementReference _video;
+    private bool _on, _error;
+    private string? _msg, _unknown;
+    private string _target = "", _newName = "";
+    private int _pack = 1;
+
+    private async Task Start()
+    {
+        _msg = null;
+        _on = true;
+        StateHasChanged();
+        await Task.Yield();
+        try
+        {
+            _js ??= await JS.InvokeAsync<IJSObjectReference>("import", "./patat-scan.js");
+            _self ??= DotNetObjectReference.Create(this);
+            await _js.InvokeVoidAsync("start", _video, _self);
+        }
+        catch (JSException ex)
+        {
+            _on = false;
+            Show("Camera starten lukt niet: " + ex.Message, true);
+        }
+    }
+
+    private async Task Stop()
+    {
+        _on = false;
+        if (_js is not null) try { await _js.InvokeVoidAsync("stop"); } catch (JSException) { }
+    }
+
+    private void Show(string msg, bool error = false) => (_msg, _error) = (msg, error);
+
+    [JSInvokable]
+    public async Task OnScan(string code)
+    {
+        if (Engine.ByBarcode(code) is { } s)
+        {
+            var pack = Math.Max(1, s.PackSize);
+            s.Stock += pack;
+            Show($"✅ +{pack} {s.Name} (nu {s.Stock})");
+            await Changed();
+        }
+        else if (_unknown != code)
+        {
+            _unknown = code;
+            _target = "";
+            _pack = 1;
+            _newName = _js is null ? "" : await _js.InvokeAsync<string>("lookup", code);
+            Show("Nieuwe code: kies de snack of maak een nieuwe aan.");
+        }
+        StateHasChanged();
+    }
+
+    private async Task Link()
+    {
+        if (_unknown is null) return;
+        var s = Engine.Find(_target);
+        if (s is null)
+        {
+            s = new Snack { Name = _newName.Trim() };
+            Engine.State.Snacks.Add(s);
+        }
+        s.PackSize = Math.Max(1, _pack);
+        s.Barcodes.Add(_unknown);
+        s.Stock += s.PackSize;
+        Show($"✅ Code gekoppeld aan {s.Name}: +{s.PackSize} (nu {s.Stock})");
+        _unknown = null;
+        await Changed();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await Stop();
+        if (_js is not null) try { await _js.DisposeAsync(); } catch (JSDisconnectedException) { }
+        _self?.Dispose();
+    }
+}

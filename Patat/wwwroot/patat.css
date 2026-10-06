@@ -152,3 +152,7 @@ body.pt-alarm { animation: pt-alarm 1s steps(1) infinite; }
 .pt-groups { list-style: none; padding: 0; margin: 0 0 1rem; display: grid; gap: .35rem; max-width: 360px; }
 .pt-groups li { display: flex; align-items: center; gap: .5rem; padding: .35rem .6rem; border: 1px solid var(--pt-border); border-radius: 10px; background: var(--pt-surface); }
 .pt-groups li span { flex: 1; font-weight: 600; }
+.pt-scan { margin: 0 0 1rem; display: grid; gap: .5rem; }
+.pt-scan-box { display: grid; gap: .5rem; max-width: 420px; }
+.pt-scan-box video { width: 100%; border-radius: 12px; background: #000; aspect-ratio: 4 / 3; object-fit: cover; }
+.pt-scan-new { display: grid; gap: .5rem; padding: .75rem; border: 1px solid var(--pt-border); border-radius: 12px; background: var(--pt-surface); max-width: 420px; }

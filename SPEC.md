@@ -65,3 +65,5 @@ in `patat.js` hersteld.
 - **Ongedaan maken:** bevestiging bij destructieve acties en een undo-knop voor de bakker.
 - **Icoonkiezer volgt focus:** staat de icoonkiezer open en ga je naar een andere snackregel (klik of Tab), dan schuift de kiezer mee en past hij die snack aan.
 - **Sortering:** bestellen en voorraad tonen snacks op frituurgroep (volgorde instelbaar via `GroupOrder`, standaard Patat bovenaan; overige groepen alfabetisch, zonder groep als laatste) en daarbinnen alfabetisch. Snacks zonder voorraad staan altijd onderaan.
+- **Cloud leidend:** met Firebase neemt de bakker altijd de cloudstaat over die hij niet zelf schreef (ongeacht versienummer) en schrijft pas naar de cloud nadat die gelezen is; peer-states worden dan niet meer overgenomen. Voorraadpagina houdt een vaste volgorde tijdens bewerken (knop *Sorteren* om opnieuw te sorteren).
+- **Streepjescodes:** `Snack.Barcodes`. Scannen met de camera (BarcodeDetector of WASM-ponyfill via esm.sh). Bekende code: +1 pak. Onbekende code: koppelen aan bestaande snack of nieuwe snack (naam voorgesteld via Open Food Facts), met stuks per pak.

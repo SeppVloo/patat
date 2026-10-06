@@ -297,7 +297,8 @@
         _lastJson = json;
         await JsVoid(_js, "save", StateKey, json);
         await JsVoid(_js, "broadcast", json, null);
-        if (_dbOn) await JsVoid(_db, "save", json);
+        // Until the cloud state has been read, never overwrite it: the cloud is leading.
+        if (_dbOn && _dbSeen) await JsVoid(_db, "save", json);
         StateHasChanged();
     }
 
@@ -311,8 +312,11 @@
         }
         var first = !_dbSeen;
         _dbSeen = true;
-        if (_engine.TryAdopt(json))
+        // The cloud is leading: take over every state there that this device did not write itself,
+        // regardless of version numbers (another device may have counted higher while offline).
+        if (!string.IsNullOrWhiteSpace(json) && json != _lastJson && _engine.Load(json))
         {
+            _lastJson = json;
             // The database has a newer version (e.g. changed on another baker device).
             await JsVoid(_js, "save", StateKey, json);
             await JsVoid(_js, "broadcast", json, null);
@@ -425,7 +429,7 @@
     public async Task OnHello(string peer, string? json)
     {
         if (_js is null || !_bakker) return;
-        if (_engine.TryAdopt(json))
+        if (!_dbOn && _engine.TryAdopt(json))
         {
             // Another device had a newer version (e.g. the baker used a different device before).
             _engine.State.Version--;

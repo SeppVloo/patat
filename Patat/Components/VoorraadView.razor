@@ -2,11 +2,12 @@
 <div class="pt-card">
     <h2>📦 Voorraad beheren</h2>
     <p class="pt-muted">Snacks met dezelfde frituurgroep mogen samen gebakken worden. Laat de groep leeg om een snack altijd los te bakken.</p>
+    <Scanner Engine="Engine" Changed="Changed" />
     <div class="pt-stock">
         <div class="pt-stock-row head">
             <span></span><span>Snack</span><span>Voorraad</span><span>Per pak</span><span>Min.</span><span>Frituurgroep</span><span></span>
         </div>
-        @foreach (var s in Engine.Sorted(x => x.Stock > 0))
+        @foreach (var s in Rows())
         {
             <div class="pt-stock-row @(s.Stock <= 0 ? "empty" : s.Stock <= 2 ? "low" : "")" @key="s.Id" @onfocusin="() => Focus(s)">
                 <button class="pt-iconbtn" title="Icoon kiezen" @onclick="() => TogglePick(s)"><SnackIcon Snack="s" Size="34" /></button>
@@ -57,6 +58,7 @@
     }
     <div class="pt-row">
         <button class="pt-btn" @onclick="AddSnack">➕ Snack toevoegen</button>
+        <button class="pt-btn ghost" @onclick="Resort" title="Opnieuw sorteren op groep en naam">↕ Sorteren</button>
         <button class="pt-btn ghost" @onclick="Defaults">Standaardlijst terugzetten</button>
     </div>
     @if (Engine.State.Orders.Count > 0)
@@ -71,7 +73,21 @@
 
     private string? _pick;
 
-    private Task MoveGroup(string g, int delta) { Engine.MoveGroup(g, delta); return Changed(); }
+    private Task MoveGroup(string g, int delta) { Engine.MoveGroup(g, delta); Resort(); return Changed(); }
+
+    // The order is fixed while editing, so rows don't jump around; it is refreshed when the page opens,
+    // the group order changes or via the sort button. New snacks are added at the bottom.
+    private List<string> _order = [];
+
+    protected override void OnInitialized() => Resort();
+
+    private void Resort() => _order = Engine.Sorted(x => x.Stock > 0).Select(x => x.Id).ToList();
+
+    private IEnumerable<Snack> Rows()
+    {
+        foreach (var s in Engine.State.Snacks) if (!_order.Contains(s.Id)) _order.Add(s.Id);
+        return Engine.State.Snacks.OrderBy(s => _order.IndexOf(s.Id));
+    }
     private bool _moved;
 
     // An open icon picker follows the row that has the focus.
