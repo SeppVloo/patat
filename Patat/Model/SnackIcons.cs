@@ -1,4 +1,4 @@
-namespace Patat.Model;
+﻿namespace Patat.Model;
 
 /// <summary>Hand-drawn SVG icons (viewBox 0 0 64 64) for Dutch snacks, plus a name-based guess for new snacks.</summary>
 public static class SnackIcons
@@ -76,6 +76,52 @@ public static class SnackIcons
             "<g fill='#fff6dc'><ellipse cx='24' cy='20' rx='1.6' ry='.8'/><ellipse cx='34' cy='17' rx='1.6' ry='.8'/><ellipse cx='42' cy='22' rx='1.6' ry='.8'/></g>" +
             "<path d='M8 32 H56 L52 36 H12 Z' fill='#5fae3a'/><rect x='9' y='35' width='46' height='8' rx='4' fill='#6b3216'/>" +
             "<path d='M10 43 H54 V46 Q54 52 46 52 H18 Q10 52 10 46 Z' fill='#d8933e'/>"),
+		new("gehaktbal", "Gehaktbal",
+			"<ellipse cx='32' cy='52' rx='22' ry='5' fill='#ececec'/>" +
+			"<circle cx='32' cy='34' r='17' fill='#7b3b1a'/><circle cx='26' cy='28' r='6' fill='#9c5228' opacity='.7'/>" +
+			"<g fill='#5a2a12'><circle cx='36' cy='38' r='1.6'/><circle cx='28' cy='40' r='1.2'/><circle cx='40' cy='30' r='1.3'/></g>"),
+		new("kaasstengel", "Kaasstengel",
+			"<g transform='rotate(-12 32 32)'><rect x='6' y='26' width='52' height='12' rx='3' fill='#e6b04e'/>" +
+			"<path d='M10 26 l4 -3 l4 3 l4 -3 l4 3 l4 -3 l4 3 l4 -3 l4 3 l4 -3 l4 3' fill='#f3cf7c'/>" +
+			"<rect x='54' y='28' width='6' height='8' rx='2' fill='#ffd84a'/></g>"),
+		new("sjasliek", "Sjasliek",
+			"<path d='M4 32 H60' stroke='#c9a46b' stroke-width='2.5' stroke-linecap='round'/>" +
+			"<rect x='10' y='23' width='9' height='18' rx='3' fill='#7a3418'/><rect x='21' y='24' width='7' height='16' rx='2' fill='#e7c24a'/>" +
+			"<rect x='30' y='23' width='9' height='18' rx='3' fill='#7a3418'/><rect x='41' y='24' width='7' height='16' rx='2' fill='#c0392b'/>" +
+			"<rect x='50' y='23' width='8' height='18' rx='3' fill='#7a3418'/>"),
+		new("ribster", "Ribster",
+			"<path d='M8 26 Q8 20 16 20 H50 Q58 20 58 28 V36 Q58 44 50 44 H16 Q8 44 8 38 Z' fill='#8a3a17'/>" +
+			"<path d='M16 24 V40 M24 24 V40 M32 24 V40 M40 24 V40 M48 24 V40' stroke='#5e240c' stroke-width='2.5' stroke-linecap='round'/>" +
+			"<path d='M12 24 H54' stroke='#b4582a' stroke-width='2' opacity='.7'/>"),
+		new("braadworst", "Braadworst",
+			"<path d='M8 40 Q6 30 16 28 Q32 24 48 28 Q58 30 56 40 Q54 44 48 42 Q32 38 16 42 Q10 44 8 40 Z' fill='#b0532a'/>" +
+			"<path d='M18 31 l4 6 M28 29 l4 6 M38 29 l4 6 M46 31 l3 5' stroke='#7a3418' stroke-width='1.6' stroke-linecap='round'/>" +
+			"<path d='M14 32 Q32 27 50 32' stroke='#d77b4a' stroke-width='2' fill='none' opacity='.7'/>"),
+		new("kipvleugels", "Kipvleugels",
+			"<path d='M10 44 Q8 30 22 26 Q32 24 34 32 Q36 42 24 46 Q14 50 10 44 Z' fill='#c9641f'/>" +
+			"<path d='M32 38 Q34 22 48 22 Q58 24 56 34 Q54 44 42 44 Q34 44 32 38 Z' fill='#b4521a'/>" +
+			"<g fill='#e9883c' opacity='.7'><circle cx='20' cy='33' r='3'/><circle cx='46' cy='29' r='3'/></g>"),
+		new("uienringen", "Uienringen",
+			"<g fill='none' stroke-width='7'><circle cx='24' cy='36' r='12' stroke='#d99a3e'/><circle cx='40' cy='28' r='12' stroke='#e5ab52'/></g>" +
+			"<g fill='none' stroke='#b9772a' stroke-width='1'><circle cx='24' cy='36' r='8.5'/><circle cx='40' cy='28' r='8.5'/></g>"),
+		new("vlammetjes", "Vlammetjes",
+			"<g fill='#d99a3e' stroke='#b9772a' stroke-width='1.2'><rect x='8' y='20' width='22' height='10' rx='4'/><rect x='34' y='20' width='22' height='10' rx='4'/><rect x='20' y='36' width='22' height='10' rx='4'/></g>" +
+			"<path d='M50 50 q-6 -6 0 -12 q0 6 5 6 q2 -4 0 -7 q7 5 3 12 z' fill='#e4572e'/><path d='M52 50 q-2 -3 0 -6 q2 3 3 3 q0 3 -3 3 z' fill='#ffcf3a'/>"),
+		new("kibbeling", "Kibbeling / vis",
+			"<path d='M8 34 Q22 18 42 26 L54 18 L52 34 L54 50 L42 42 Q22 50 8 34 Z' fill='#d9953c'/>" +
+			"<g fill='#efc06c' opacity='.8'><circle cx='20' cy='32' r='2'/><circle cx='30' cy='36' r='1.8'/><circle cx='36' cy='30' r='1.6'/></g>" +
+			"<circle cx='15' cy='31' r='1.6' fill='#5a2a12'/>"),
+		new("vissticks", "Vissticks",
+			"<g fill='#e09a40'><rect x='8' y='18' width='48' height='9' rx='2'/><rect x='8' y='30' width='48' height='9' rx='2'/><rect x='8' y='42' width='48' height='9' rx='2'/></g>" +
+			"<g fill='#f3c574' opacity='.8'><rect x='10' y='19' width='44' height='3' rx='1'/><rect x='10' y='31' width='44' height='3' rx='1'/><rect x='10' y='43' width='44' height='3' rx='1'/></g>" +
+			"<ellipse cx='54' cy='56' rx='5' ry='2.5' fill='#f4e04d'/>"),
+		new("kroepoek", "Kroepoek",
+			"<path d='M8 30 Q14 18 26 22 Q34 14 44 22 Q56 20 56 32 Q60 44 46 44 Q38 52 28 46 Q14 50 10 40 Q4 36 8 30 Z' fill='#f7ecd2' stroke='#e2d0a4' stroke-width='1.5'/>" +
+			"<g fill='#e8d6a8'><circle cx='22' cy='32' r='2'/><circle cx='34' cy='28' r='1.6'/><circle cx='40' cy='38' r='2'/><circle cx='28' cy='40' r='1.5'/></g>"),
+		new("kipschnitzel", "Kipschnitzel",
+			"<path d='M8 32 Q8 18 26 18 Q44 16 54 26 Q60 36 50 44 Q36 52 20 48 Q8 44 8 32 Z' fill='#d8912f'/>" +
+			"<path d='M14 30 Q30 22 48 28' stroke='#eab25a' stroke-width='3' fill='none' opacity='.8'/>" + Crumbs +
+			"<path d='M46 46 l8 -6 l2 4 z' fill='#f2d64b'/>"),
         new("saus", "Saus",
             "<path d='M16 30 H48 L44 54 H20 Z' fill='#ffffff' stroke='#d9d9d9' stroke-width='2'/>" +
             "<path d='M18 30 Q24 18 32 24 Q40 16 46 30 Z' fill='#fffbe8' stroke='#efe3b0'/>"),
@@ -96,6 +142,20 @@ public static class SnackIcons
 
     private static readonly (string[] Words, string Key)[] Rules =
     [
+		(["kaasstengel", "kaasstick", "mozzarella", "cheese stick"], "kaasstengel"),
+		(["vlammetje", "mini loempia", "mini-loempia"], "vlammetjes"),
+		(["schnitzel"], "kipschnitzel"),
+		(["vleugel", "wing"], "kipvleugels"),
+		(["visstick", "vissstick", "fishstick", "fish stick"], "vissticks"),
+		(["kibbeling", "lekkerbek", "vis"], "kibbeling"),
+		(["gehaktbal", "bal gehakt"], "gehaktbal"),
+		(["sjasliek", "shaslick", "shashlik", "sjaslik"], "sjasliek"),
+		(["ribster"], "ribster"),
+		(["braadworst", "curryworst", "worst", "bockworst"], "braadworst"),
+		(["uienring", "onion"], "uienringen"),
+		(["kroepoek", "kroepoek", "kroepuk"], "kroepoek"),
+		(["gehaktstaaf", "picanto", "pikanto"], "viandel"),
+		(["bamihap"], "bamischijf"),
         (["speciaal", "spesiaal"], "frikandel-speciaal"),
         (["mexicano"], "mexicano"),
         (["viandel"], "viandel"),

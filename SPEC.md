@@ -29,7 +29,7 @@
 - Bestellen kan alleen als `Open` aan staat (schakelaar op het bak-scherm).
 - **Nieuwe ronde** wist bestellingen, mandjes en weigeringen; voorraad blijft zoals hij is.
 - Elke snack heeft **stuks per pak** (`PackSize`, standaard 1). Op het voorraadscherm telt de knop **+ pak (N)** in één keer een heel pak bij de voorraad op.
-- Elke snack heeft een **icoon** (`Icon`): sleutel uit de eigen SVG-catalogus `SnackIcons` (patat, frikandel, frikandel speciaal, kroket, kipcorn, kaassoufflé, bitterbal, berenklauw, loempia, mexicano, viandel, bamischijf, nasibal, kipnuggets, burger, saus, snack), `emoji` (eigen emoji) of leeg = automatisch raden op naam. Kiezen via de icoonknop op het voorraadscherm.
+- Elke snack heeft een **icoon** (`Icon`): sleutel uit de eigen SVG-catalogus `SnackIcons` (patat, frikandel, frikandel speciaal, kroket, kipcorn, kaassoufflé, bitterbal, berenklauw, loempia, mexicano, viandel, bamischijf, nasibal, kipnuggets, burger, gehaktbal, kaasstengel, sjasliek, ribster, braadworst, kipvleugels, uienringen, vlammetjes, kibbeling/vis, vissticks, kroepoek, kipschnitzel, saus, snack), `emoji` (eigen emoji) of leeg = automatisch raden op naam. Kiezen via de icoonknop op het voorraadscherm.
 
 ## Samen bakken
 - Elke snack heeft een baktijd (minuten) en een **frituurgroep**. Alleen snacks met dezelfde groep (hoofdletterongevoelig) én dezelfde baktijd gaan samen in één mandje (`GroupKey` = groep@minuten); lege groep = altijd los.
@@ -55,3 +55,4 @@ in `patat.js` hersteld.
 - **Geschiedenis, piep, mandjes:** bestelgeschiedenis tot een jaar; geluidssignaal als de baktimer verloopt; alleen gelijke baktijden samen in een mandje.
 - **Scherm aan + knipperen:** scherm blijft aan tijdens een baktimer en knippert als de timer verloopt (ook bruikbaar op iPhone zonder geluid).
 - **Mobiel voorraadscherm + thema:** voorraadrij op smalle schermen in 3 regels (icoon/naam/verwijderen, stepper + pak, per pak/min./frituurgroep met labels); inputs 16px zodat iOS niet inzoomt. App volgt het licht/donker-thema van het apparaat (`prefers-color-scheme`, CSS-variabelen).
+- **Meer snack-iconen:** 12 extra iconen voor gangbare Nederlandse diepvries-/cafetariasnacks (o.a. gehaktbal, kaasstengel, sjasliek, ribster, braadworst, kipvleugels, uienringen, vlammetjes, kibbeling, vissticks, kroepoek, kipschnitzel) met automatische naamherkenning (ook picanto, bamihap, curryworst, lekkerbek).
