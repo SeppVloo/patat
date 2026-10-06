@@ -1,4 +1,4 @@
-@implements IDisposable
+﻿@implements IDisposable
 @inject IJSRuntime JS
 
 <div class="pt-card">
@@ -113,54 +113,69 @@
 }
 
 @code {
-    [Parameter, EditorRequired] public PatatEngine Engine { get; set; } = default!;
-    [Parameter] public Func<Task> Changed { get; set; } = () => Task.CompletedTask;
+	[Parameter, EditorRequired] public PatatEngine Engine { get; set; } = default!;
+	[Parameter] public Func<Task> Changed { get; set; } = () => Task.CompletedTask;
 
-    private static readonly System.Globalization.CultureInfo Nl = new("nl-NL");
-    private Timer? _timer;
+	private static readonly System.Globalization.CultureInfo Nl = new("nl-NL");
+	private Timer? _timer;
 
-    protected override void OnInitialized() =>
-        _timer = new Timer(_ => InvokeAsync(Tick), null, 1000, 1000);
+	protected override void OnInitialized() =>
+		_timer = new Timer(_ => InvokeAsync(Tick), null, 1000, 1000);
 
-    // Batches that already rang, plus the last time, so the alarm repeats every 15s until Klaar.
-    private readonly Dictionary<string, DateTime> _rang = [];
+	// Batches that already rang, plus the last time, so the alarm repeats every 15s until Klaar.
+	private readonly Dictionary<string, DateTime> _rang = [];
+	private bool? _wake, _flash;
 
-    private async Task Tick()
-    {
-        StateHasChanged();
-        if (Engine.State.Orders.Count == 0) return;
-        var now = DateTime.UtcNow;
-        var ring = false;
-        foreach (var b in Engine.Plan())
-        {
-            var st = Engine.State.Batches.FirstOrDefault(x => x.Key == b.Key);
-            if (st is null || st.Done || Left(st, b.Minutes) is not { } l || l > TimeSpan.Zero) continue;
-            if (_rang.TryGetValue(b.Key, out var last) && now - last < TimeSpan.FromSeconds(15)) continue;
-            _rang[b.Key] = now;
-            ring = true;
-        }
-        if (ring) await Beep(4);
-    }
+	private async Task Tick()
+	{
+		StateHasChanged();
+		var now = DateTime.UtcNow;
+		bool ring = false, running = false, expired = false;
+		foreach (var b in Engine.State.Orders.Count == 0 ? [] : Engine.Plan())
+		{
+			var st = Engine.State.Batches.FirstOrDefault(x => x.Key == b.Key);
+			if (st is null || st.Done || Left(st, b.Minutes) is not { } l) continue;
+			running = true;
+			if (l > TimeSpan.Zero) continue;
+			expired = true;
+			if (_rang.TryGetValue(b.Key, out var last) && now - last < TimeSpan.FromSeconds(15)) continue;
+			_rang[b.Key] = now;
+			ring = true;
+		}
+		if (_wake != running) { _wake = running; await Js("patatWake", running); }
+		if (_flash != expired) { _flash = expired; await Js("patatFlash", expired); }
+		if (ring) await Beep(4);
+	}
 
-    private async Task Beep(int n)
-    {
-        try { await JS.InvokeVoidAsync("patatBeep", n); } catch (JSException) { }
-    }
+	private async Task Js(string fn, bool on)
+	{
+		try { await JS.InvokeVoidAsync(fn, on); } catch (JSException) { }
+	}
 
-    private static TimeSpan? Left(Batch b, int minutes) =>
-        b.StartedUtc.HasValue ? TimeSpan.FromMinutes(minutes) - (DateTime.UtcNow - b.StartedUtc.Value) : null;
+	private async Task Beep(int n)
+	{
+		try { await JS.InvokeVoidAsync("patatBeep", n); } catch (JSException) { }
+	}
 
-    private static string BatchClass(Batch b, TimeSpan? left) =>
-        b.Done ? "done" : left is null ? "" : left.Value <= TimeSpan.Zero ? "ready" : "busy";
+	private static TimeSpan? Left(Batch b, int minutes) =>
+		b.StartedUtc.HasValue ? TimeSpan.FromMinutes(minutes) - (DateTime.UtcNow - b.StartedUtc.Value) : null;
 
-    private static string TimerText(TimeSpan rest) =>
-        rest <= TimeSpan.Zero ? "⏰ Eruit halen!" : $"⏱ {rest:m\\:ss}";
+	private static string BatchClass(Batch b, TimeSpan? left) =>
+		b.Done ? "done" : left is null ? "" : left.Value <= TimeSpan.Zero ? "ready" : "busy";
 
-    private async Task Start(Batch b) { await Beep(0); _rang.Remove(b.Key); b.StartedUtc = DateTime.UtcNow; await Changed(); }
-    private Task Done(Batch b) { b.Done = true; return Changed(); }
-    private Task Reset(Batch b) { _rang.Remove(b.Key); b.Done = false; b.StartedUtc = null; return Changed(); }
-    private Task Cancel(string person) { Engine.Cancel(person); return Changed(); }
-    private Task Finish() { Engine.Finish(); return Changed(); }
+	private static string TimerText(TimeSpan rest) =>
+		rest <= TimeSpan.Zero ? "⏰ Eruit halen!" : $"⏱ {rest:m\\:ss}";
 
-    public void Dispose() => _timer?.Dispose();
+	private async Task Start(Batch b) { await Beep(0); _rang.Remove(b.Key); b.StartedUtc = DateTime.UtcNow; await Changed(); }
+	private Task Done(Batch b) { b.Done = true; return Changed(); }
+	private Task Reset(Batch b) { _rang.Remove(b.Key); b.Done = false; b.StartedUtc = null; return Changed(); }
+	private Task Cancel(string person) { Engine.Cancel(person); return Changed(); }
+	private Task Finish() { Engine.Finish(); return Changed(); }
+
+	public void Dispose()
+	{
+		_timer?.Dispose();
+		_ = Js("patatWake", false);
+		_ = Js("patatFlash", false);
+	}
 }

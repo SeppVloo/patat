@@ -33,7 +33,7 @@
 
 ## Samen bakken
 - Elke snack heeft een baktijd (minuten) en een **frituurgroep**. Alleen snacks met dezelfde groep (hoofdletterongevoelig) én dezelfde baktijd gaan samen in één mandje (`GroupKey` = groep@minuten); lege groep = altijd los.
-- Is de timer van een mandje verlopen, dan klinkt een piepsignaal (Web Audio, `window.patatBeep`) en trilt de telefoon; dit herhaalt elke 15 s tot *Klaar*. Het geluid wordt bij *Start* ontgrendeld (nodig op mobiel).
+- Is de timer van een mandje verlopen, dan klinkt een piepsignaal (Web Audio, `window.patatBeep`) en trilt de telefoon; dit herhaalt elke 15 s tot *Klaar*. Het geluid wordt bij *Start* ontgrendeld (nodig op mobiel). Zolang er een timer loopt blijft het scherm aan (Screen Wake Lock, `window.patatWake`); bij een verlopen timer knippert het hele scherm oranje (`body.pt-alarm`, `window.patatFlash`). iPhones trillen niet vanuit een webapp.
 - **Geschiedenis:** *Nieuwe ronde* bewaart de bestellingen als `Round` (tijd, bestellingen, snacknamen) in `PatatState.History`; rondes ouder dan een jaar worden verwijderd. Zichtbaar onder 📜 Geschiedenis op het bak-scherm.
 - Mandje-tijd = langste baktijd in de groep. Mandjes staan op volgorde van langste eerst.
 - Per mandje: *Start* (timer, knippert als hij klaar is), *Klaar*, *Opnieuw*. Komt er een bestelling bij voor een mandje dat al klaar was, dan gaat dat mandje terug naar open.
@@ -53,3 +53,4 @@
 in `patat.js` hersteld.
 - **Iconen + database:** eigen SVG-iconen per snack met kiezer en automatisch raden voor nieuwe snacks; optionele Firebase Realtime Database als gedeelde opslag per gezinscode (inbox voor bestellingen), met Trystero als terugval.
 - **Geschiedenis, piep, mandjes:** bestelgeschiedenis tot een jaar; geluidssignaal als de baktimer verloopt; alleen gelijke baktijden samen in een mandje.
+- **Scherm aan + knipperen:** scherm blijft aan tijdens een baktimer en knippert als de timer verloopt (ook bruikbaar op iPhone zonder geluid).

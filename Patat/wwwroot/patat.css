@@ -108,3 +108,8 @@ html, body { margin: 0; background: #f5f6f8; }
 .loading-progress circle:last-child { stroke: #d97706; stroke-linecap: round; stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%; transition: stroke-dasharray .05s ease-in-out; }
 .loading-progress-text { position: absolute; text-align: center; font-weight: 700; color: #6b7684; font-family: system-ui, sans-serif; inset: calc(30vh + 2.9rem) 0 auto .2rem; }
 .loading-progress-text:after { content: var(--blazor-load-percentage-text, "Laden"); }
+
+/* Expired fry timer: flash the whole screen */
+body.pt-alarm { animation: pt-alarm 1s steps(1) infinite; }
+@keyframes pt-alarm { 50% { background: #ffb020; } }
+@media (prefers-reduced-motion: reduce) { body.pt-alarm { animation: none; background: #ffd27a; } }
