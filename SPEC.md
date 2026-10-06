@@ -77,3 +77,4 @@ in `patat.js` hersteld.
 - **Trillen + uitlijning:** `patat-buzz.js` (`window.patatBuzz(n)`): `navigator.vibrate` waar mogelijk, anders iOS 18+ haptic via verborgen `<input type=checkbox switch>`. 1 tik bij Start, 3 bij aflopen (elke 15 s). iOS staat dit alleen kort na een gebruikersactie toe. Voorraadrijen hebben vaste kolombreedtes zodat ze uitlijnen.
 - **Gezinscode wijzigen + Pak-keuze:** bakker kan voorraad meenemen naar een nieuwe gezinscode; *+ pak*-knop vervangen door keuzelijst met bekende verpakkingen.
 - **Mobiel, bevestigen, wifi:** voorraadrijen als kaarten op kleine schermen; bevestiging bij elk verwijderen; gezin herkennen op hetzelfde wifi-netwerk (uit te zetten door de bakker).
+- **Favicon:** eigen icoon (patatzak met friet op donkere achtergrond) als `favicon.svg`, `favicon-32.png`, `apple-touch-icon.png` (180, vierkant voor iOS) en PWA-iconen `icon-192/512.png`.
