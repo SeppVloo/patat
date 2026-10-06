@@ -9,17 +9,17 @@
         {
             <div class="pt-stock-row @(s.Stock <= 0 ? "empty" : s.Stock <= 2 ? "low" : "")" @key="s.Id">
                 <button class="pt-iconbtn" title="Icoon kiezen" @onclick="() => _pick = _pick == s.Id ? null : s.Id"><SnackIcon Snack="s" Size="34" /></button>
-                <input class="pt-input" @bind="s.Name" @bind:after="Changed" maxlength="30" />
+                <input class="pt-input name" @bind="s.Name" @bind:after="Changed" maxlength="30" />
                 <span class="pt-stepper">
                     <button class="pt-round" @onclick="() => Add(s, -1)" disabled="@(s.Stock <= 0)">−</button>
                     <input class="pt-input num" type="number" min="0" @bind="s.Stock" @bind:after="Changed" />
                     <button class="pt-round" @onclick="() => Add(s, 1)">+</button>
                     <button class="pt-btn small pt-pack" title="Heel pak toevoegen" @onclick="() => Add(s, Math.Max(1, s.PackSize))">+ pak (@Math.Max(1, s.PackSize))</button>
                 </span>
-                <input class="pt-input num" type="number" min="1" max="200" title="Stuks per pak" @bind="s.PackSize" @bind:after="Changed" />
-                <input class="pt-input num" type="number" min="1" max="30" @bind="s.FryMinutes" @bind:after="Changed" />
-                <input class="pt-input" @bind="s.FryGroup" @bind:after="Changed" placeholder="los" maxlength="20" />
-                <button class="pt-round danger" title="Verwijderen" @onclick="() => Remove(s)">🗑</button>
+                <label class="pt-f"><small>Per pak</small><input class="pt-input num" type="number" min="1" max="200" title="Stuks per pak" @bind="s.PackSize" @bind:after="Changed" /></label>
+                <label class="pt-f"><small>Min.</small><input class="pt-input num" type="number" min="1" max="30" @bind="s.FryMinutes" @bind:after="Changed" /></label>
+                <label class="pt-f group"><small>Frituurgroep</small><input class="pt-input" @bind="s.FryGroup" @bind:after="Changed" placeholder="los" maxlength="20" /></label>
+                <button class="pt-round danger del" title="Verwijderen" @onclick="() => Remove(s)">🗑</button>
             </div>
             @if (_pick == s.Id)
             {

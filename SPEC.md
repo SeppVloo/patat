@@ -54,3 +54,4 @@ in `patat.js` hersteld.
 - **Iconen + database:** eigen SVG-iconen per snack met kiezer en automatisch raden voor nieuwe snacks; optionele Firebase Realtime Database als gedeelde opslag per gezinscode (inbox voor bestellingen), met Trystero als terugval.
 - **Geschiedenis, piep, mandjes:** bestelgeschiedenis tot een jaar; geluidssignaal als de baktimer verloopt; alleen gelijke baktijden samen in een mandje.
 - **Scherm aan + knipperen:** scherm blijft aan tijdens een baktimer en knippert als de timer verloopt (ook bruikbaar op iPhone zonder geluid).
+- **Mobiel voorraadscherm + thema:** voorraadrij op smalle schermen in 3 regels (icoon/naam/verwijderen, stepper + pak, per pak/min./frituurgroep met labels); inputs 16px zodat iOS niet inzoomt. App volgt het licht/donker-thema van het apparaat (`prefers-color-scheme`, CSS-variabelen).
