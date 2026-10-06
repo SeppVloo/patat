@@ -26,6 +26,11 @@
             <label>Je naam <input class="pt-input" @bind="_nameInput" placeholder="bijv. Sepp" maxlength="20" /></label>
             <label>Gezinscode <input class="pt-input" @bind="_codeInput" placeholder="zelfde code voor iedereen" maxlength="30" /></label>
             <label class="pt-check"><input type="checkbox" @bind="_bakkerInput" /> Ik ben de snackbakker (dit apparaat bewaart voorraad en bestellingen)</label>
+            @if (_bakker && _bakkerInput && !string.IsNullOrWhiteSpace(_code) && !string.IsNullOrWhiteSpace(_codeInput) && !string.Equals(_codeInput.Trim(), _code, StringComparison.OrdinalIgnoreCase))
+            {
+                <label class="pt-check"><input type="checkbox" @bind="_moveStock" /> Voorraad, codes en geschiedenis meenemen naar de nieuwe gezinscode (vervangt wat daar staat)</label>
+                <p class="pt-muted">Iedereen in het gezin moet daarna ook de nieuwe gezinscode invullen.</p>
+            }
             <button class="pt-btn big" @onclick="SaveSetup" disabled="@(string.IsNullOrWhiteSpace(_nameInput) || string.IsNullOrWhiteSpace(_codeInput))">Klaar</button>
         </div>
         <Help />
@@ -125,6 +130,7 @@
     private string _name = "", _code = "", _nameInput = "", _codeInput = "", _note = "";
     private string? _msg;
     private int _peers;
+    private bool _moveStock = true, _forceUpload;
     private List<OnlineUser> _online = [];
     private sealed record OnlineUser(string Name, bool Baker);
     private Order? _pending;
@@ -191,7 +197,15 @@
     {
         if (_js is null) return;
         var reconnect = _codeInput.Trim() != _code || _bakkerInput != _bakker || _nameInput.Trim() != _name;
+        var move = _moveStock && _bakker && _bakkerInput && !string.Equals(_codeInput.Trim(), _code, StringComparison.OrdinalIgnoreCase)
+            ? _engine.ToJson() : null;
+        _moveStock = false;
         (_name, _code, _bakker) = (_nameInput.Trim(), _codeInput.Trim(), _bakkerInput);
+        if (move is not null)
+        {
+            await JsVoid(_js, "save", StateKey, move);
+            _forceUpload = true;
+        }
         await JsVoid(_js, "save", KeyName, _name);
         await JsVoid(_js, "save", KeyCode, _code);
         await JsVoid(_js, "save", KeyBakker, _bakker ? "1" : null);
@@ -338,6 +352,13 @@
         }
         var first = !_dbSeen;
         _dbSeen = true;
+        if (first && _forceUpload)
+        {
+            // Stock was moved to this new family code: it replaces whatever is stored there.
+            _forceUpload = false;
+            await Publish();
+            return;
+        }
         // The cloud is leading: take over every state there that this device did not write itself,
         // regardless of version numbers (another device may have counted higher while offline).
         if (!string.IsNullOrWhiteSpace(json) && json != _lastJson && _engine.Load(json))

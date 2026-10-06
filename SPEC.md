@@ -28,7 +28,8 @@
 - Voorraad wordt bij bestellen meteen gereserveerd (afgetrokken) en bij annuleren teruggegeven. Meer bestellen dan voorraad kan niet (UI begrenst, engine weigert).
 - Bestellen kan alleen als `Open` aan staat (schakelaar op het bak-scherm).
 - **Nieuwe ronde** wist bestellingen, mandjes en weigeringen; voorraad blijft zoals hij is.
-- Elke snack heeft **stuks per pak** (`PackSize`, standaard 1). Op het voorraadscherm telt de knop **+ pak (N)** in één keer een heel pak bij de voorraad op.
+- Elke snack heeft **stuks per pak** (`PackSize`, standaard 1). Op het voorraadscherm kiest de bakker bij **Pak +** een bekende verpakking (de pakaantallen van gekoppelde streepjescodes, anders `PackSize`) of *ander aantal…*; de handmatige *+ pak*-knop en het veld *per pak* zijn vervallen.
+- **Gezinscode wijzigen:** de bakker kan in ⚙ een nieuwe gezinscode invullen. Met *meenemen* (standaard aan) wordt de huidige state onder de nieuwe code opgeslagen en bij de eerste databaseverbinding geüpload (vervangt wat daar stond); zonder vinkje wordt de state van de nieuwe code geladen.
 Oude opslag met codes als tekst wordt gelezen met het pakaantal van de snack.
 - **Herkennen:** codes worden vergeleken zonder voorloopnullen (UPC-A = EAN-13 met 0). Bij een nieuwe code haalt de app naam, merk, categorieën en hoeveelheid op bij Open Food Facts; `MatchSnack` kiest de snack waarvan woorden uit de naam voorkomen (anders via het icoon-trefwoord) en `GuessPack` leest het aantal stuks ("10 stuks", "10 x 70 g"). De gebruiker bevestigt alleen.
 - **Online:** in databasemodus meldt elk apparaat zich onder `families/<id>/presence` (naam, bakker); Firebase verwijdert de melding bij verbreken (`onDisconnect`). Bovenaan staat wie er online is.
@@ -73,3 +74,4 @@ in `patat.js` hersteld.
 - **Cloud leidend:** met Firebase neemt de bakker altijd de cloudstaat over die hij niet zelf schreef (ongeacht versienummer) en schrijft pas naar de cloud nadat die gelezen is; peer-states worden dan niet meer overgenomen. Voorraadpagina houdt een vaste volgorde tijdens bewerken (knop *Sorteren* om opnieuw te sorteren).
 - **Streepjescodes:** `Snack.Barcodes`. Scannen met de camera (BarcodeDetector of WASM-ponyfill via esm.sh). Bekende code: +1 pak. Onbekende code: koppelen aan bestaande snack of nieuwe snack (naam voorgesteld via Open Food Facts), met stuks per pak.
 - **Trillen + uitlijning:** `patat-buzz.js` (`window.patatBuzz(n)`): `navigator.vibrate` waar mogelijk, anders iOS 18+ haptic via verborgen `<input type=checkbox switch>`. 1 tik bij Start, 3 bij aflopen (elke 15 s). iOS staat dit alleen kort na een gebruikersactie toe. Voorraadrijen hebben vaste kolombreedtes zodat ze uitlijnen.
+- **Gezinscode wijzigen + Pak-keuze:** bakker kan voorraad meenemen naar een nieuwe gezinscode; *+ pak*-knop vervangen door keuzelijst met bekende verpakkingen.

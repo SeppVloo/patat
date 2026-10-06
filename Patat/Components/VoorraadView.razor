@@ -5,7 +5,7 @@
     <Scanner Engine="Engine" Changed="Changed" />
     <div class="pt-stock">
         <div class="pt-stock-row head">
-            <span></span><span>Snack</span><span>Voorraad</span><span>Per pak</span><span>Min.</span><span>Frituurgroep</span><span></span>
+            <span></span><span>Snack</span><span>Voorraad</span><span>Pak +</span><span>Min.</span><span>Frituurgroep</span><span></span>
         </div>
         @foreach (var s in Rows())
         {
@@ -16,9 +16,17 @@
                     <button class="pt-round" @onclick="() => Add(s, -1)" disabled="@(s.Stock <= 0)">−</button>
                     <input class="pt-input num" type="number" min="0" @bind="s.Stock" @bind:after="Changed" />
                     <button class="pt-round" @onclick="() => Add(s, 1)">+</button>
-                    <button class="pt-btn small pt-pack" title="Heel pak toevoegen" @onclick="() => Add(s, Math.Max(1, s.PackSize))">+ pak (@Math.Max(1, s.PackSize))</button>
                 </span>
-                <label class="pt-f"><small>Per pak</small><input class="pt-input num" type="number" min="1" max="200" title="Stuks per pak" @bind="s.PackSize" @bind:after="Changed" /></label>
+                <label class="pt-f"><small>Pak +</small>
+                    <select class="pt-input pt-packsel" @key="(s.Id + _packReset)" title="Bekende verpakking toevoegen" value="" @onchange="e => AddPack(s, e.Value)">
+                        <option value="">+ pak…</option>
+                        @foreach (var p in Packs(s))
+                        {
+                            <option value="@p.Size">+@p.Size @p.Label</option>
+                        }
+                        <option value="other">ander aantal…</option>
+                    </select>
+                </label>
                 <label class="pt-f"><small>Min.</small><input class="pt-input num" type="number" min="1" max="30" @bind="s.FryMinutes" @bind:after="Changed" /></label>
                 <label class="pt-f group"><small>Frituurgroep</small><input class="pt-input" @bind="s.FryGroup" @bind:after="Changed" placeholder="los" maxlength="20" /></label>
                 <button class="pt-round danger del" title="Verwijderen" @onclick="() => Remove(s)">🗑</button>
@@ -124,6 +132,32 @@
     {
         s.Stock = Math.Max(0, s.Stock + delta);
         return Changed();
+    }
+
+    /// <summary>Known packages of a snack: one per distinct pack size of its barcodes, else the snack's own pack size.</summary>
+    private static List<(int Size, string Label)> Packs(Snack s)
+    {
+        var list = s.Barcodes.GroupBy(b => Math.Max(1, b.PackSize))
+            .Select(g => (g.Key, string.Join(", ", g.Select(b => b.Label).Where(l => l != "").Distinct())))
+            .OrderBy(p => p.Key).ToList();
+        if (list.Count == 0 && s.PackSize > 1) list.Add((s.PackSize, ""));
+        return list;
+    }
+
+    private int _packReset;
+
+    private async Task AddPack(Snack s, object? value)
+    {
+        _packReset++;
+        var v = value?.ToString();
+        int n;
+        if (v == "other")
+        {
+            string? answer = null; try { answer = await JS.InvokeAsync<string?>("prompt", $"Hoeveel stuks {s.Name} toevoegen?", ""); } catch (JSException) { }
+            if (!int.TryParse(answer, out n) || n <= 0) return;
+        }
+        else if (!int.TryParse(v, out n) || n <= 0) return;
+        await Add(s, n);
     }
 
     private Task AddSnack()
