@@ -85,6 +85,8 @@
     [JSInvokable]
     public async Task OnScan(string code)
     {
+        // Close the camera as soon as a code is recognised, so you can continue.
+        await Stop();
         if (Engine.ByBarcode(code) is { } s)
         {
             var pack = Math.Max(1, s.PackSize);

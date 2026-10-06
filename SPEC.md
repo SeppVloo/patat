@@ -70,3 +70,4 @@ in `patat.js` hersteld.
 - **Trillen + uitlijning:** `patat-buzz.js` (`window.patatBuzz(n)`): `navigator.vibrate` waar mogelijk, anders iOS 18+ haptic via verborgen `<input type=checkbox switch>`. 1 tik bij Start, 3 bij aflopen (elke 15 s). iOS staat dit alleen kort na een gebruikersactie toe. Voorraadrijen hebben vaste kolombreedtes zodat ze uitlijnen.
 - **Fix trillen:** `patat-buzz.js` was leeg gecommit. Nu ook een native click-listener (`data-buzz` op Start, en elke tik tijdens het alarm), omdat iOS de haptic alleen synchroon binnen een echte tik toestaat.
 - **Fix vastlopen:** de klik van de verborgen iOS-schakelaar triggerde tijdens het alarm de click-listener opnieuw (eindeloze lus). Nu genegeerd via `busy`-vlag en `e.isTrusted`.
+- **Scanner:** camera sluit direct na het herkennen van een streepjescode.
