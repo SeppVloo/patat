@@ -1,4 +1,5 @@
 @implements IDisposable
+@inject IJSRuntime JS
 
 <div class="pt-card">
     <div class="pt-row spread">
@@ -86,14 +87,65 @@
     </div>
 }
 
+@if (Engine.State.History.Count > 0)
+{
+    <details class="pt-card">
+        <summary><b>📜 Geschiedenis</b> <span class="pt-muted">(@Engine.State.History.Count rondes, laatste jaar)</span></summary>
+        @foreach (var r in Engine.State.History.OrderByDescending(r => r.Time))
+        {
+            <h3>@r.Time.ToLocalTime().ToString("ddd d MMM yyyy HH:mm", Nl)</h3>
+            <ul class="pt-orders">
+                @foreach (var o in r.Orders)
+                {
+                    <li>
+                        <b>@o.Person</b>
+                        <span class="pt-items">
+                            @foreach (var (id, n) in o.Items)
+                            {
+                                <span class="pt-item">@(n)× @(r.Names.GetValueOrDefault(id) ?? Engine.Find(id)?.Name ?? id)</span>
+                            }
+                        </span>
+                    </li>
+                }
+            </ul>
+        }
+    </details>
+}
+
 @code {
     [Parameter, EditorRequired] public PatatEngine Engine { get; set; } = default!;
     [Parameter] public Func<Task> Changed { get; set; } = () => Task.CompletedTask;
 
+    private static readonly System.Globalization.CultureInfo Nl = new("nl-NL");
     private Timer? _timer;
 
     protected override void OnInitialized() =>
-        _timer = new Timer(_ => InvokeAsync(StateHasChanged), null, 1000, 1000);
+        _timer = new Timer(_ => InvokeAsync(Tick), null, 1000, 1000);
+
+    // Batches that already rang, plus the last time, so the alarm repeats every 15s until Klaar.
+    private readonly Dictionary<string, DateTime> _rang = [];
+
+    private async Task Tick()
+    {
+        StateHasChanged();
+        if (Engine.State.Orders.Count == 0) return;
+        var now = DateTime.UtcNow;
+        var ring = false;
+        foreach (var b in Engine.Plan())
+        {
+            var st = Engine.State.Batches.FirstOrDefault(x => x.Key == b.Key);
+            if (st is null || st.Done || Left(st, b.Minutes) is not { } l || l > TimeSpan.Zero) continue;
+            if (_rang.TryGetValue(b.Key, out var last) && now - last < TimeSpan.FromSeconds(15)) continue;
+            _rang[b.Key] = now;
+            ring = true;
+        }
+        if (ring) await Beep(4);
+    }
+
+    private async Task Beep(int n)
+    {
+        try { await JS.InvokeVoidAsync("patatBeep", n); } catch (JSException) { }
+    }
 
     private static TimeSpan? Left(Batch b, int minutes) =>
         b.StartedUtc.HasValue ? TimeSpan.FromMinutes(minutes) - (DateTime.UtcNow - b.StartedUtc.Value) : null;
@@ -104,9 +156,9 @@
     private static string TimerText(TimeSpan rest) =>
         rest <= TimeSpan.Zero ? "⏰ Eruit halen!" : $"⏱ {rest:m\\:ss}";
 
-    private Task Start(Batch b) { b.StartedUtc = DateTime.UtcNow; return Changed(); }
+    private async Task Start(Batch b) { await Beep(0); _rang.Remove(b.Key); b.StartedUtc = DateTime.UtcNow; await Changed(); }
     private Task Done(Batch b) { b.Done = true; return Changed(); }
-    private Task Reset(Batch b) { b.Done = false; b.StartedUtc = null; return Changed(); }
+    private Task Reset(Batch b) { _rang.Remove(b.Key); b.Done = false; b.StartedUtc = null; return Changed(); }
     private Task Cancel(string person) { Engine.Cancel(person); return Changed(); }
     private Task Finish() { Engine.Finish(); return Changed(); }
 

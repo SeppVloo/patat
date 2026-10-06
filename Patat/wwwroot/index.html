@@ -31,6 +31,20 @@
         <a href="." class="reload">Herladen</a>
         <span class="dismiss">🗙</span>
     </div>
+    <script>
+        // Kitchen-timer beep via Web Audio. Call with n=0 from a click to unlock audio on mobile.
+        window.patatBeep = function (n) {
+            const C = window.AudioContext || window.webkitAudioContext; if (!C) return;
+            const a = window.patatAudio = window.patatAudio || new C(); a.resume();
+            for (let i = 0; i < n; i++) {
+                const o = a.createOscillator(), g = a.createGain(), t = a.currentTime + i * 0.35;
+                o.frequency.value = 880; o.connect(g); g.connect(a.destination);
+                g.gain.setValueAtTime(0.4, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+                o.start(t); o.stop(t + 0.3);
+            }
+            if (n > 0 && navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
+        };
+    </script>
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
     <script>navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' });</script>
 </body>

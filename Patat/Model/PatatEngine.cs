@@ -34,6 +34,14 @@ public class Batch
     public bool Done { get; set; }
 }
 
+public class Round
+{
+    public DateTime Time { get; set; } = DateTime.UtcNow;
+    public List<Order> Orders { get; set; } = [];
+    /// <summary>Snack id -> name at the time of the round, so history stays readable after renames/removals.</summary>
+    public Dictionary<string, string> Names { get; set; } = [];
+}
+
 public class PatatState
 {
     /// <summary>Incremented on every change by the baker; the highest version wins when devices meet.</summary>
@@ -44,6 +52,8 @@ public class PatatState
     public List<Batch> Batches { get; set; } = [];
     /// <summary>Order stamp -> reason, so a remote device learns why its order was refused.</summary>
     public Dictionary<string, string> Rejected { get; set; } = [];
+    /// <summary>Finished rounds of the last year.</summary>
+    public List<Round> History { get; set; } = [];
 }
 
 public record PlannedBatch(string Key, string Title, int Minutes, List<(Snack Snack, int Count)> Items);
@@ -132,6 +142,13 @@ public class PatatEngine
     /// <summary>New round: orders are cleared, stock stays as it is (already used).</summary>
     public void Finish()
     {
+        if (State.Orders.Count > 0)
+            State.History.Add(new Round
+            {
+                Orders = [.. State.Orders],
+                Names = State.Snacks.ToDictionary(s => s.Id, s => s.Name),
+            });
+        PruneHistory();
         State.Orders.Clear();
         State.Batches.Clear();
         State.Rejected.Clear();
@@ -146,7 +163,10 @@ public class PatatEngine
         return t;
     }
 
-    public static string GroupKey(Snack s) => string.IsNullOrWhiteSpace(s.FryGroup) ? "#" + s.Id : s.FryGroup.Trim().ToLowerInvariant();
+    public void PruneHistory() => State.History.RemoveAll(r => r.Time < DateTime.UtcNow.AddYears(-1));
+
+    /// <summary>Only snacks of the same fry group AND the same fry time can share a basket.</summary>
+    public static string GroupKey(Snack s) => string.IsNullOrWhiteSpace(s.FryGroup) ? "#" + s.Id : s.FryGroup.Trim().ToLowerInvariant() + "@" + s.FryMinutes;
 
     /// <summary>Batches for the fryer: snacks of the same group together, longest batch first.</summary>
     public List<PlannedBatch> Plan()
