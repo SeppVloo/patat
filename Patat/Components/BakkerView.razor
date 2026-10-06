@@ -42,7 +42,7 @@
                     }
                     else
                     {
-                        <button class="pt-btn small" @onclick="() => Start(st)">▶ Start</button>
+                        <button class="pt-btn small" data-buzz="1" @onclick="() => Start(st)">▶ Start</button>
                         <button class="pt-btn ghost small" @onclick="() => Done(st)">✅ Klaar</button>
                     }
                 </div>
@@ -171,7 +171,7 @@
 	private static string TimerText(TimeSpan rest) =>
 		rest <= TimeSpan.Zero ? "⏰ Eruit halen!" : $"⏱ {rest:m\\:ss}";
 
-	private async Task Start(Batch b) { await Beep(0); await Buzz(1); _rang.Remove(b.Key); b.StartedUtc = DateTime.UtcNow; await Changed(); }
+	private async Task Start(Batch b) { await Beep(0); _rang.Remove(b.Key); b.StartedUtc = DateTime.UtcNow; await Changed(); }
 	private Task Done(Batch b) { b.Done = true; return Changed(); }
 	private Task Reset(Batch b) { _rang.Remove(b.Key); b.Done = false; b.StartedUtc = null; return Changed(); }
 	private Task Cancel(string person) { Engine.Cancel(person); return Changed(); }
