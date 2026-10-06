@@ -7,6 +7,13 @@ public static class SnackIcons
 
     private const string Crumbs = "<g fill='#8a4b12' opacity='.45'><circle cx='20' cy='30' r='1.2'/><circle cx='28' cy='35' r='1'/><circle cx='36' cy='29' r='1.2'/><circle cx='44' cy='34' r='1'/><circle cx='24' cy='38' r='.9'/><circle cx='40' cy='38' r='.9'/><circle cx='32' cy='31' r='.8'/></g>";
 
+	/// <summary>Kroket with a bitten-off end showing the filling colour, plus an optional accent drawn top-left.</summary>
+	private static IconInfo Kroket(string key, string title, string filling, string accent) => new(key, title,
+		"<rect x='8' y='22' width='48' height='20' rx='10' fill='#c47a2c'/>" +
+		"<rect x='11' y='24' width='42' height='6' rx='3' fill='#dd9a4a' opacity='.9'/>" + Crumbs +
+		"<path d='M46 22 q-4 3 -2 6 q-3 3 0 6 q-3 3 0 8 H48 Q56 42 56 32 Q56 22 48 22 Z' fill='" + filling + "'/>" +
+		"<path d='M46 22 q-4 3 -2 6 q-3 3 0 6 q-3 3 0 8' fill='none' stroke='#a8621f' stroke-width='1.2'/>" + accent);
+
     public static readonly IReadOnlyList<IconInfo> All =
     [
         new("patat", "Patat",
@@ -122,6 +129,40 @@ public static class SnackIcons
 			"<path d='M8 32 Q8 18 26 18 Q44 16 54 26 Q60 36 50 44 Q36 52 20 48 Q8 44 8 32 Z' fill='#d8912f'/>" +
 			"<path d='M14 30 Q30 22 48 28' stroke='#eab25a' stroke-width='3' fill='none' opacity='.8'/>" + Crumbs +
 			"<path d='M46 46 l8 -6 l2 4 z' fill='#f2d64b'/>"),
+		new("chicken-tenders", "Chicken tenders",
+			"<g transform='rotate(-20 32 32)'><path d='M6 26 Q10 20 30 22 Q44 22 52 26 Q56 30 52 34 Q44 38 30 36 Q12 36 8 32 Z' fill='#d9932f'/></g>" +
+			"<g transform='rotate(10 32 40)'><path d='M10 40 Q14 34 32 36 Q46 36 54 40 Q58 44 54 48 Q46 52 32 50 Q14 50 10 46 Z' fill='#c97f22'/></g>" +
+			"<g fill='#f2c46e' opacity='.8'><path d='M16 24 l4 -2 l2 3 z'/><path d='M30 22 l4 -1 l1 3 z'/><path d='M22 40 l4 -1 l1 3 z'/><path d='M38 41 l4 -1 l1 3 z'/></g>"),
+		new("eierbal", "Eierbal",
+			"<ellipse cx='32' cy='54' rx='20' ry='4' fill='#ececec'/>" +
+			"<circle cx='32' cy='34' r='18' fill='#c9772a'/>" +
+			"<path d='M32 34 m-18 0 a18 18 0 0 0 36 0 Z' fill='#b0641e' opacity='.5'/>" +
+			"<ellipse cx='32' cy='34' rx='10' ry='8' fill='#ffffff'/><circle cx='32' cy='35' r='5' fill='#f5b700'/>" + Crumbs),
+		new("vietnamese-loempia", "Vietnamese loempia",
+			"<ellipse cx='32' cy='50' rx='26' ry='5' fill='#ececec'/>" +
+			"<g fill='#e9c27a' stroke='#c99a48' stroke-width='1.2'><rect x='8' y='22' width='34' height='9' rx='4.5'/><rect x='18' y='33' width='34' height='9' rx='4.5'/><rect x='10' y='44' width='30' height='7' rx='3.5'/></g>" +
+			"<path d='M12 25 h26 M22 36 h26' stroke='#f6dca6' stroke-width='2' stroke-linecap='round'/>" +
+			"<path d='M48 20 q6 -2 8 4 q-6 2 -8 -4 z' fill='#3a9a45'/>"),
+		new("picanto", "Picanto",
+			"<rect x='6' y='25' width='52' height='15' rx='7.5' fill='#a3481f'/>" +
+			"<rect x='9' y='27' width='46' height='5' rx='2.5' fill='#c8632e' opacity='.85'/>" +
+			"<g fill='#e23b1d'><circle cx='16' cy='35' r='1.4'/><circle cx='26' cy='31' r='1.3'/><circle cx='36' cy='36' r='1.4'/><circle cx='47' cy='32' r='1.3'/></g>" +
+			"<g fill='#f2c94c'><circle cx='21' cy='36' r='1'/><circle cx='42' cy='35' r='1'/></g>" +
+			"<path d='M48 14 q8 -2 8 8 q-7 -1 -8 -8 z' fill='#d62f2f'/><path d='M48 14 l-2 -3' stroke='#2e8b3a' stroke-width='2' stroke-linecap='round'/>"),
+		Kroket("kroket-rund", "Rundvleeskroket", "#8a4a2a", ""),
+		Kroket("kroket-kalf", "Kalfsvleeskroket", "#c99a78", ""),
+		Kroket("kroket-garnaal", "Garnalenkroket", "#f2a38a",
+			"<path d='M8 14 q8 -8 14 0 q-3 6 -9 4' fill='none' stroke='#f07a52' stroke-width='3' stroke-linecap='round'/>"),
+		Kroket("kroket-sate", "Satékroket", "#a3652c",
+			"<path d='M16 46 q8 6 16 0 q8 6 16 0' fill='none' stroke='#8a5a1a' stroke-width='4' stroke-linecap='round'/>"),
+		Kroket("kroket-goulash", "Goulashkroket", "#b0401f",
+			"<path d='M10 10 q6 -4 8 4 q-1 6 -6 6 q-4 -2 -2 -10 z' fill='#d62f2f'/><path d='M14 10 l1 -4' stroke='#2e8b3a' stroke-width='2' stroke-linecap='round'/>"),
+		Kroket("kroket-kip", "Kipkroket", "#efd9b0",
+			"<path d='M8 16 q2 -8 10 -6 q6 2 4 8 l4 4 l-3 2 l-4 -4 q-8 2 -11 -4 z' fill='#d9932f'/>"),
+		Kroket("kroket-groente", "Groentekroket", "#9cc46a",
+			"<path d='M10 18 q0 -10 10 -10 q0 10 -10 10 z' fill='#3a9a45'/><path d='M10 18 l6 -6' stroke='#2a7a34' stroke-width='1.2'/>"),
+		Kroket("kroket-kaas", "Kaaskroket", "#ffd84a",
+			"<path d='M8 18 L22 10 L22 18 Z' fill='#f5c518'/><circle cx='16' cy='15' r='1.4' fill='#e0a800'/>"),
         new("saus", "Saus",
             "<path d='M16 30 H48 L44 54 H20 Z' fill='#ffffff' stroke='#d9d9d9' stroke-width='2'/>" +
             "<path d='M18 30 Q24 18 32 24 Q40 16 46 30 Z' fill='#fffbe8' stroke='#efe3b0'/>"),
@@ -142,6 +183,18 @@ public static class SnackIcons
 
     private static readonly (string[] Words, string Key)[] Rules =
     [
+		(["garnaal", "garnalen"], "kroket-garnaal"),
+		(["satékroket", "satekroket", "saté kroket", "sate kroket"], "kroket-sate"),
+		(["goulash", "goulash"], "kroket-goulash"),
+		(["kipkroket", "kip kroket", "kippenkroket"], "kroket-kip"),
+		(["groentekroket", "groente kroket", "vega kroket", "vegakroket", "vegetarische kroket"], "kroket-groente"),
+		(["kaaskroket", "kaas kroket"], "kroket-kaas"),
+		(["kalf"], "kroket-kalf"),
+		(["rundvlees", "rundkroket", "rund kroket", "runder"], "kroket-rund"),
+		(["vietnam", "vietnamese"], "vietnamese-loempia"),
+		(["tender", "kipfilet strip", "kipreep"], "chicken-tenders"),
+		(["eierbal", "eibal"], "eierbal"),
+		(["picanto", "pikanto"], "picanto"),
 		(["kaasstengel", "kaasstick", "mozzarella", "cheese stick"], "kaasstengel"),
 		(["vlammetje", "mini loempia", "mini-loempia"], "vlammetjes"),
 		(["schnitzel"], "kipschnitzel"),
