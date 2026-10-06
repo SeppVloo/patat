@@ -144,7 +144,7 @@
 		}
 		if (_wake != running) { _wake = running; await Js("patatWake", running); }
 		if (_flash != expired) { _flash = expired; await Js("patatFlash", expired); }
-		if (ring) await Beep(4);
+		if (ring) { await Beep(4); await Buzz(3); }
 	}
 
 	private async Task Js(string fn, bool on)
@@ -157,6 +157,11 @@
 		try { await JS.InvokeVoidAsync("patatBeep", n); } catch (JSException) { }
 	}
 
+	private async Task Buzz(int n)
+	{
+		try { await JS.InvokeVoidAsync("patatBuzz", n); } catch (JSException) { }
+	}
+
 	private static TimeSpan? Left(Batch b, int minutes) =>
 		b.StartedUtc.HasValue ? TimeSpan.FromMinutes(minutes) - (DateTime.UtcNow - b.StartedUtc.Value) : null;
 
@@ -166,7 +171,7 @@
 	private static string TimerText(TimeSpan rest) =>
 		rest <= TimeSpan.Zero ? "⏰ Eruit halen!" : $"⏱ {rest:m\\:ss}";
 
-	private async Task Start(Batch b) { await Beep(0); _rang.Remove(b.Key); b.StartedUtc = DateTime.UtcNow; await Changed(); }
+	private async Task Start(Batch b) { await Beep(0); await Buzz(1); _rang.Remove(b.Key); b.StartedUtc = DateTime.UtcNow; await Changed(); }
 	private Task Done(Batch b) { b.Done = true; return Changed(); }
 	private Task Reset(Batch b) { _rang.Remove(b.Key); b.Done = false; b.StartedUtc = null; return Changed(); }
 	private Task Cancel(string person) { Engine.Cancel(person); return Changed(); }
