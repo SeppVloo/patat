@@ -8,8 +8,8 @@
         </div>
         @foreach (var s in Engine.State.Snacks)
         {
-            <div class="pt-stock-row @(s.Stock <= 0 ? "empty" : s.Stock <= 2 ? "low" : "")" @key="s.Id">
-                <button class="pt-iconbtn" title="Icoon kiezen" @onclick="() => _pick = _pick == s.Id ? null : s.Id"><SnackIcon Snack="s" Size="34" /></button>
+            <div class="pt-stock-row @(s.Stock <= 0 ? "empty" : s.Stock <= 2 ? "low" : "")" @key="s.Id" @onfocusin="() => Focus(s)">
+                <button class="pt-iconbtn" title="Icoon kiezen" @onclick="() => TogglePick(s)"><SnackIcon Snack="s" Size="34" /></button>
                 <input class="pt-input name" @bind="s.Name" @bind:after="Changed" maxlength="30" />
                 <span class="pt-stepper">
                     <button class="pt-round" @onclick="() => Add(s, -1)" disabled="@(s.Stock <= 0)">−</button>
@@ -53,6 +53,22 @@
     [Parameter] public Func<Task> Changed { get; set; } = () => Task.CompletedTask;
 
     private string? _pick;
+    private bool _moved;
+
+    // An open icon picker follows the row that has the focus.
+    private void Focus(Snack s)
+    {
+        _moved = _pick is not null && _pick != s.Id;
+        if (_moved) _pick = s.Id;
+    }
+
+    private void TogglePick(Snack s)
+    {
+        // Focus just moved the picker here; keep it open instead of closing it again.
+        if (_moved && _pick == s.Id) { _moved = false; return; }
+        _moved = false;
+        _pick = _pick == s.Id ? null : s.Id;
+    }
 
     private static string AutoKey(Snack s) => SnackIcons.Guess(s.Name) is { Length: > 0 } k ? k : "snack";
 

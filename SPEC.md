@@ -63,3 +63,4 @@ in `patat.js` hersteld.
 - **Nog meer iconen:** chicken tenders, eierbal, Vietnamese loempia, picanto (eigen icoon) en krokettenvarianten (rund, kalf, garnaal, saté, goulash, kip, groente, kaas; aangebeten kroket met kleur van de vulling).
 - **Naam uit icoon:** een icoon kiezen neemt de icoonnaam over als naam, zolang de naam nog niet met de hand is aangepast (leeg, 'Nieuwe snack' of een icoonnaam). Daarna kan het icoon gewoon weer op *Auto* (raden op naam).
 - **Ongedaan maken:** bevestiging bij destructieve acties en een undo-knop voor de bakker.
+- **Icoonkiezer volgt focus:** staat de icoonkiezer open en ga je naar een andere snackregel (klik of Tab), dan schuift de kiezer mee en past hij die snack aan.
