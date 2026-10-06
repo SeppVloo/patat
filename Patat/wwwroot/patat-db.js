@@ -17,7 +17,7 @@ async function familyId(code) {
 
 export function enabled() { return !!(config && config.databaseURL); }
 
-export async function start(ref, code, host) {
+export async function start(ref, code, host, name) {
     stop();
     if (!enabled()) return false;
     dotnet = ref;
@@ -35,6 +35,17 @@ export async function start(ref, code, host) {
         inboxRef = fb.ref(db, `families/${id}/inbox`);
         unsubs.push(fb.onValue(stateRef, snap => call("OnDbState", snap.val() ?? "")));
         if (host) unsubs.push(fb.onChildAdded(inboxRef, snap => call("OnDbInbox", snap.key, JSON.stringify(snap.val()))));
+        // Presence: each open app registers itself; Firebase removes the entry when the connection drops.
+        const presenceRoot = fb.ref(db, `families/${id}/presence`);
+        const me = fb.push(presenceRoot);
+        const info = { name: (name || "?").slice(0, 30), baker: !!host, at: Date.now() };
+        unsubs.push(fb.onValue(fb.ref(db, ".info/connected"), async snap => {
+            if (snap.val() !== true) return;
+            await fb.onDisconnect(me).remove();
+            await fb.set(me, info);
+        }));
+        unsubs.push(fb.onValue(presenceRoot, snap => call("OnDbPresence", JSON.stringify(Object.values(snap.val() ?? {})))));
+        unsubs.push(() => fb.remove(me));
         return true;
     } catch (e) {
         console.warn("Database niet bereikbaar", e);

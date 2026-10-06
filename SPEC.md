@@ -29,6 +29,8 @@
 - Bestellen kan alleen als `Open` aan staat (schakelaar op het bak-scherm).
 - **Nieuwe ronde** wist bestellingen, mandjes en weigeringen; voorraad blijft zoals hij is.
 - Elke snack heeft **stuks per pak** (`PackSize`, standaard 1). Op het voorraadscherm telt de knop **+ pak (N)** in één keer een heel pak bij de voorraad op.
+- **Streepjescodes:** een snack kan meerdere codes hebben (`Barcodes`: `{code, packSize, label}`), bijv. verschillende merken of pakgroottes; een gescande code telt het aantal stuks van díe code op. Scannen gebeurt via canvas-frames met `BarcodeDetector` (of de ZXing-ponyfill, ook op iPhone); de code kan ook worden ingetypt. Onder **🏷 Codes** staan alle gekoppelde codes per snack, met aanpasbaar aantal en ontkoppelknop. Oude opslag met codes als tekst wordt gelezen met het pakaantal van de snack.
+- **Online:** in databasemodus meldt elk apparaat zich onder `families/<id>/presence` (naam, bakker); Firebase verwijdert de melding bij verbreken (`onDisconnect`). Bovenaan staat wie er online is.
 - Elke snack heeft een **icoon** (`Icon`): sleutel uit de eigen SVG-catalogus `SnackIcons` (patat, frikandel, frikandel speciaal, kroket, kipcorn, kaassoufflé, bitterbal, berenklauw, loempia, mexicano, viandel, bamischijf, nasibal, kipnuggets, burger, gehaktbal, kaasstengel, sjasliek, ribster, braadworst, kipvleugels, uienringen, vlammetjes, kibbeling/vis, vissticks, kroepoek, kipschnitzel, saus, snack), `emoji` (eigen emoji) of leeg = automatisch raden op naam. Kiezen via de icoonknop op het voorraadscherm.
 
 ## Samen bakken
@@ -54,6 +56,7 @@
 - **Pakken + nieuwe stijl:** snacks hebben stuks per pak met een *+ pak*-knop om de voorraad snel op te hogen. Professionelere, rustige vormgeving (neutrale kleuren, subtiele schaduwen, segment-tabs).
 - **Voorraad blijft na redeploy:** Trystero lazy geladen (opslag werkt los van de CDN); onleesbare state krijgt een reservekopie i.p.v. een stille reset.
 - **Eigen domein:** `wwwroot/CNAME` = `patat.vloo.nl`; site draait daardoor vanaf `/` (base href blijft `/`).
+- **Codes & online:** betrouwbaarder scannen (canvas-frames, autofocus, meer formaten), code intypen, meerdere codes per snack met eigen pakaantal en merk, overzicht van alle codes, en lijst van wie er online is (Firebase presence).
 in `patat.js` hersteld.
 - **Iconen + database:** eigen SVG-iconen per snack met kiezer en automatisch raden voor nieuwe snacks; optionele Firebase Realtime Database als gedeelde opslag per gezinscode (inbox voor bestellingen), met Trystero als terugval.
 - **Geschiedenis, piep, mandjes:** bestelgeschiedenis tot een jaar; geluidssignaal als de baktimer verloopt; alleen gelijke baktijden samen in een mandje.
@@ -68,6 +71,3 @@ in `patat.js` hersteld.
 - **Cloud leidend:** met Firebase neemt de bakker altijd de cloudstaat over die hij niet zelf schreef (ongeacht versienummer) en schrijft pas naar de cloud nadat die gelezen is; peer-states worden dan niet meer overgenomen. Voorraadpagina houdt een vaste volgorde tijdens bewerken (knop *Sorteren* om opnieuw te sorteren).
 - **Streepjescodes:** `Snack.Barcodes`. Scannen met de camera (BarcodeDetector of WASM-ponyfill via esm.sh). Bekende code: +1 pak. Onbekende code: koppelen aan bestaande snack of nieuwe snack (naam voorgesteld via Open Food Facts), met stuks per pak.
 - **Trillen + uitlijning:** `patat-buzz.js` (`window.patatBuzz(n)`): `navigator.vibrate` waar mogelijk, anders iOS 18+ haptic via verborgen `<input type=checkbox switch>`. 1 tik bij Start, 3 bij aflopen (elke 15 s). iOS staat dit alleen kort na een gebruikersactie toe. Voorraadrijen hebben vaste kolombreedtes zodat ze uitlijnen.
-- **Fix trillen:** `patat-buzz.js` was leeg gecommit. Nu ook een native click-listener (`data-buzz` op Start, en elke tik tijdens het alarm), omdat iOS de haptic alleen synchroon binnen een echte tik toestaat.
-- **Fix vastlopen:** de klik van de verborgen iOS-schakelaar triggerde tijdens het alarm de click-listener opnieuw (eindeloze lus). Nu genegeerd via `busy`-vlag en `e.isTrusted`.
-- **Scanner:** camera sluit direct na het herkennen van een streepjescode.

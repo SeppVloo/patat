@@ -156,6 +156,13 @@ body.pt-alarm { animation: pt-alarm 1s steps(1) infinite; }
 .pt-scan-box { display: grid; gap: .5rem; max-width: 420px; }
 .pt-scan-box video { width: 100%; border-radius: 12px; background: #000; aspect-ratio: 4 / 3; object-fit: cover; }
 .pt-scan-new { display: grid; gap: .5rem; padding: .75rem; border: 1px solid var(--pt-border); border-radius: 12px; background: var(--pt-surface); max-width: 420px; }
+.pt-scan .pt-row > .pt-input { width: 11rem; }
+.pt-codes { display: grid; gap: .6rem; padding: .75rem; border: 1px solid var(--pt-border); border-radius: 12px; background: var(--pt-surface); margin-top: .5rem; }
+.pt-codes-snack { display: grid; gap: .25rem; }
+.pt-code-row { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; }
+.pt-code-row code { font-size: .9rem; }
+.pt-code-row .pt-input.num { width: 4.5rem; }
+.pt-online { font-size: .85rem; color: var(--pt-muted, #666); margin: -.25rem 0 .5rem; }
 
 /* Stock rows: fixed column contents so every row lines up with the header. */
 .pt-stock-row > * { min-width: 0; }

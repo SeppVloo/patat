@@ -10,6 +10,10 @@
         <h1 class="pt-logo">🍟 PATAT</h1>
         <span class="pt-status @(Connected ? "on" : "")">@StatusText</span>
     </div>
+    @if (_online.Count > 0)
+    {
+        <div class="pt-online" title="Wie heeft de app nu open">🟢 Online: @string.Join(", ", _online.Select(p => p.Baker ? p.Name + " 👨‍🍳" : p.Name))</div>
+    }
 
     @if (!_ready)
     {
@@ -121,6 +125,8 @@
     private string _name = "", _code = "", _nameInput = "", _codeInput = "", _note = "";
     private string? _msg;
     private int _peers;
+    private List<OnlineUser> _online = [];
+    private sealed record OnlineUser(string Name, bool Baker);
     private Order? _pending;
     private Dictionary<string, int> _draft = [];
 
@@ -153,18 +159,38 @@
 
     private async Task Connect()
     {
+        _online = [];
         if (_js is null || string.IsNullOrWhiteSpace(_code)) return;
         _hasState = false;
         await JsVoid(_js, "start", _self, _code, _bakker, StateKey);
         _dbSeen = false;
-        _dbOn = await JsGet<bool>(_db, "start", _self, _code, _bakker);
+        _dbOn = await JsGet<bool>(_db, "start", _self, _code, _bakker, _name);
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void OnDbPresence(string json)
+    {
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            _online = doc.RootElement.EnumerateArray()
+                .Select(e => new OnlineUser(
+                    e.TryGetProperty("name", out var n) ? n.GetString() ?? "?" : "?",
+                    e.TryGetProperty("baker", out var b) && b.ValueKind == System.Text.Json.JsonValueKind.True))
+                .GroupBy(u => u.Name, StringComparer.OrdinalIgnoreCase)
+                .Select(g => new OnlineUser(g.First().Name, g.Any(u => u.Baker)))
+                .OrderByDescending(u => u.Baker).ThenBy(u => u.Name, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+        }
+        catch (System.Text.Json.JsonException) { _online = []; }
         StateHasChanged();
     }
 
     private async Task SaveSetup()
     {
         if (_js is null) return;
-        var reconnect = _codeInput.Trim() != _code || _bakkerInput != _bakker;
+        var reconnect = _codeInput.Trim() != _code || _bakkerInput != _bakker || _nameInput.Trim() != _name;
         (_name, _code, _bakker) = (_nameInput.Trim(), _codeInput.Trim(), _bakkerInput);
         await JsVoid(_js, "save", KeyName, _name);
         await JsVoid(_js, "save", KeyCode, _code);

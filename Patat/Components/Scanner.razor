@@ -2,11 +2,16 @@
 @inject IJSRuntime JS
 
 <div class="pt-scan">
-    @if (!_on)
-    {
-        <button class="pt-btn" @onclick="Start">📷 Streepjescode scannen</button>
-    }
-    else
+    <div class="pt-row">
+        @if (!_on)
+        {
+            <button class="pt-btn" @onclick="Start">📷 Streepjescode scannen</button>
+        }
+        <input class="pt-input" inputmode="numeric" placeholder="of typ de code" @bind="_typed" @onkeydown="TypedKey" />
+        <button class="pt-btn ghost small" @onclick="UseTyped" disabled="@string.IsNullOrWhiteSpace(_typed)">OK</button>
+        <button class="pt-btn ghost small" @onclick="() => _showList = !_showList">🏷 Codes (@Engine.State.Snacks.Sum(s => s.Barcodes.Count))</button>
+    </div>
+    @if (_on)
     {
         <div class="pt-scan-box">
             <video @ref="_video" muted playsinline></video>
@@ -34,11 +39,37 @@
             {
                 <label>Naam <input class="pt-input" @bind="_newName" maxlength="30" /></label>
             }
-            <label>Stuks per pak <input class="pt-input num" type="number" min="1" max="200" @bind="_pack" /></label>
+            <label>Merk/omschrijving <input class="pt-input" @bind="_label" maxlength="40" /></label>
+            <label>Stuks per pak (deze code) <input class="pt-input num" type="number" min="1" max="200" @bind="_pack" /></label>
             <div class="pt-row">
                 <button class="pt-btn" @onclick="Link" disabled="@(_target == "" && string.IsNullOrWhiteSpace(_newName))">Opslaan en pak toevoegen</button>
                 <button class="pt-btn ghost" @onclick="() => _unknown = null">Overslaan</button>
             </div>
+        </div>
+    }
+    @if (_showList)
+    {
+        <div class="pt-codes">
+            @if (!Engine.State.Snacks.Any(s => s.Barcodes.Count > 0))
+            {
+                <p class="pt-muted">Nog geen streepjescodes gekoppeld.</p>
+            }
+            @foreach (var s in Engine.State.Snacks.Where(s => s.Barcodes.Count > 0).OrderBy(s => s.Name))
+            {
+                <div class="pt-codes-snack">
+                    <b>@s.Name</b>
+                    @foreach (var b in s.Barcodes.ToList())
+                    {
+                        <div class="pt-code-row">
+                            <code>@b.Code</code>
+                            <span class="pt-muted">@b.Label</span>
+                            <input class="pt-input num" type="number" min="1" max="200" title="Stuks per pak" value="@b.PackSize" @onchange="e => SetPack(b, e.Value)" />
+                            <span class="pt-muted">st.</span>
+                            <button class="pt-btn ghost small" title="Code ontkoppelen" @onclick="() => Unlink(s, b)">✕</button>
+                        </div>
+                    }
+                </div>
+            }
         </div>
     }
 </div>
@@ -50,10 +81,13 @@
     private IJSObjectReference? _js;
     private DotNetObjectReference<Scanner>? _self;
     private ElementReference _video;
-    private bool _on, _error;
+    private bool _on, _error, _showList;
     private string? _msg, _unknown;
-    private string _target = "", _newName = "";
+    private string _target = "", _newName = "", _label = "", _typed = "";
     private int _pack = 1;
+
+    private async Task<IJSObjectReference> Js() =>
+        _js ??= await JS.InvokeAsync<IJSObjectReference>("import", "./patat-scan.js?v=3");
 
     private async Task Start()
     {
@@ -63,9 +97,8 @@
         await Task.Yield();
         try
         {
-            _js ??= await JS.InvokeAsync<IJSObjectReference>("import", "./patat-scan.js");
             _self ??= DotNetObjectReference.Create(this);
-            await _js.InvokeVoidAsync("start", _video, _self);
+            await (await Js()).InvokeVoidAsync("start", _video, _self);
         }
         catch (JSException ex)
         {
@@ -82,16 +115,30 @@
 
     private void Show(string msg, bool error = false) => (_msg, _error) = (msg, error);
 
+    private async Task TypedKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await UseTyped();
+    }
+
+    private async Task UseTyped()
+    {
+        var code = new string(_typed.Where(char.IsLetterOrDigit).ToArray());
+        _typed = "";
+        if (code != "") await OnScan(code);
+    }
+
     [JSInvokable]
     public async Task OnScan(string code)
     {
         // Close the camera as soon as a code is recognised, so you can continue.
         await Stop();
-        if (Engine.ByBarcode(code) is { } s)
+        code = code.Trim();
+        if (Engine.ByBarcode(code) is { } hit)
         {
-            var pack = Math.Max(1, s.PackSize);
+            var (s, b) = hit;
+            var pack = Math.Max(1, b.PackSize);
             s.Stock += pack;
-            Show($"✅ +{pack} {s.Name} (nu {s.Stock})");
+            Show($"✅ +{pack} {s.Name}{(b.Label == "" ? "" : $" ({b.Label})")} (nu {s.Stock})");
             await Changed();
         }
         else if (_unknown != code)
@@ -99,8 +146,12 @@
             _unknown = code;
             _target = "";
             _pack = 1;
-            _newName = _js is null ? "" : await _js.InvokeAsync<string>("lookup", code);
-            Show("Nieuwe code: kies de snack of maak een nieuwe aan.");
+            _label = "";
+            _newName = "";
+            Show($"Nieuwe code {code}: kies de snack of maak een nieuwe aan.");
+            StateHasChanged();
+            try { _label = await (await Js()).InvokeAsync<string>("lookup", code); } catch (JSException) { }
+            _newName = _label;
         }
         StateHasChanged();
     }
@@ -111,14 +162,26 @@
         var s = Engine.Find(_target);
         if (s is null)
         {
-            s = new Snack { Name = _newName.Trim() };
+            s = new Snack { Name = _newName.Trim(), PackSize = Math.Max(1, _pack) };
             Engine.State.Snacks.Add(s);
         }
-        s.PackSize = Math.Max(1, _pack);
-        s.Barcodes.Add(_unknown);
-        s.Stock += s.PackSize;
-        Show($"✅ Code gekoppeld aan {s.Name}: +{s.PackSize} (nu {s.Stock})");
+        var b = new Barcode { Code = _unknown, PackSize = Math.Max(1, _pack), Label = _label.Trim() };
+        s.Barcodes.Add(b);
+        s.Stock += b.PackSize;
+        Show($"✅ Code gekoppeld aan {s.Name}: +{b.PackSize} (nu {s.Stock})");
         _unknown = null;
+        await Changed();
+    }
+
+    private async Task SetPack(Barcode b, object? value)
+    {
+        if (int.TryParse(value?.ToString(), out var n)) b.PackSize = Math.Clamp(n, 1, 200);
+        await Changed();
+    }
+
+    private async Task Unlink(Snack s, Barcode b)
+    {
+        s.Barcodes.Remove(b);
         await Changed();
     }
 

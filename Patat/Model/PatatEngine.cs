@@ -15,8 +15,18 @@ public class Snack
     public int PackSize { get; set; } = 1;
     /// <summary>Snacks with the same (non-empty) group can go into the fryer together.</summary>
     public string FryGroup { get; set; } = "";
-    /// <summary>Barcodes (EAN) of packages of this snack; scanning one adds a whole pack to the stock.</summary>
-    public List<string> Barcodes { get; set; } = [];
+    /// <summary>Barcodes of packages of this snack (several brands/pack sizes possible); scanning one adds that pack.</summary>
+    public List<Barcode> Barcodes { get; set; } = [];
+}
+
+[System.Text.Json.Serialization.JsonConverter(typeof(BarcodeConverter))]
+public class Barcode
+{
+    public string Code { get; set; } = "";
+    /// <summary>Pieces in a package with this code.</summary>
+    public int PackSize { get; set; } = 1;
+    /// <summary>Optional brand/product name, e.g. from Open Food Facts.</summary>
+    public string Label { get; set; } = "";
 }
 
 public class Order
@@ -100,7 +110,13 @@ public class PatatEngine
     public bool Load(string? json)
     {
         if (string.IsNullOrWhiteSpace(json)) return true;
-        try { State = JsonSerializer.Deserialize<PatatState>(json, Json) ?? State; return true; }
+        try
+        {
+            State = JsonSerializer.Deserialize<PatatState>(json, Json) ?? State;
+            foreach (var s in State.Snacks)
+                foreach (var b in s.Barcodes.Where(b => b.PackSize < 1)) b.PackSize = Math.Max(1, s.PackSize);
+            return true;
+        }
         catch (Exception ex) when (ex is JsonException or NotSupportedException) { return false; }
     }
 
@@ -139,7 +155,8 @@ public class PatatEngine
 
     public Snack? Find(string id) => State.Snacks.FirstOrDefault(s => s.Id == id);
 
-    public Snack? ByBarcode(string code) => State.Snacks.FirstOrDefault(s => s.Barcodes.Contains(code));
+    public (Snack Snack, Barcode Code)? ByBarcode(string code) =>
+        State.Snacks.SelectMany(s => s.Barcodes.Select(b => ((Snack Snack, Barcode Code)?)(s, b))).FirstOrDefault(x => x!.Value.Code.Code == code);
 
     public Order? OrderOf(string person) =>
         State.Orders.FirstOrDefault(o => string.Equals(o.Person, person, StringComparison.OrdinalIgnoreCase));
@@ -234,5 +251,28 @@ public class PatatEngine
     {
         var keys = snackIds.Select(Find).OfType<Snack>().Select(GroupKey).ToHashSet();
         State.Batches.RemoveAll(b => keys.Contains(b.Key) && b.Done);
+    }
+}
+
+/// <summary>Reads barcodes saved as plain strings (older versions) as well as objects.</summary>
+public class BarcodeConverter : System.Text.Json.Serialization.JsonConverter<Barcode>
+{
+    public override Barcode? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        return new Barcode { Code = reader.GetString() ?? "", PackSize = 0 };
+        using var doc = JsonDocument.ParseValue(ref reader);
+        var r = doc.RootElement;
+        string Str(string n) => r.TryGetProperty(n, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() ?? "" : "";
+        var pack = r.TryGetProperty("packSize", out var p) && p.TryGetInt32(out var n) ? n : 1;
+        return new Barcode { Code = Str("code"), Label = Str("label"), PackSize = Math.Max(1, pack) };
+    }
+
+    public override void Write(Utf8JsonWriter writer, Barcode value, JsonSerializerOptions options)
+    {
+        writer.WriteStartObject();
+        writer.WriteString("code", value.Code);
+        writer.WriteNumber("packSize", value.PackSize);
+        writer.WriteString("label", value.Label);
+        writer.WriteEndObject();
     }
 }
