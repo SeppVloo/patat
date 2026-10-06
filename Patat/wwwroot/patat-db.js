@@ -17,19 +17,48 @@ async function familyId(code) {
 
 export function enabled() { return !!(config && config.databaseURL); }
 
+async function ensure() {
+    if (db) return;
+    const [app, auth, database] = await Promise.all([
+        import(SDK + "firebase-app.js"), import(SDK + "firebase-auth.js"), import(SDK + "firebase-database.js")]);
+    const fbApp = app.initializeApp(config);
+    await auth.signInAnonymously(auth.getAuth(fbApp));
+    db = database.getDatabase(fbApp);
+    fb = database;
+}
+
+// Same wifi = same public IP address. The baker announces the family code under lan/<sha256(ip)>;
+// a new device on that network can then offer to join. Entries older than 12 hours are ignored.
+async function lanRef() {
+    const r = await fetch("https://api.ipify.org?format=json");
+    const ip = (await r.json()).ip;
+    return fb.ref(db, `lan/${await familyId("lan:" + ip)}`);
+}
+
+export async function lanAnnounce(code, on) {
+    if (!enabled()) return;
+    try {
+        await ensure();
+        const ref = await lanRef();
+        if (on) await fb.set(ref, { code, at: Date.now() }); else await fb.remove(ref);
+    } catch (e) { console.warn("Wifi-gezin niet bijgewerkt", e); }
+}
+
+export async function lanFind() {
+    if (!enabled()) return "";
+    try {
+        await ensure();
+        const v = (await fb.get(await lanRef())).val();
+        return v && v.code && Date.now() - (v.at || 0) < 12 * 3600 * 1000 ? v.code : "";
+    } catch { return ""; }
+}
+
 export async function start(ref, code, host, name) {
     stop();
     if (!enabled()) return false;
     dotnet = ref;
     try {
-        if (!db) {
-            const [app, auth, database] = await Promise.all([
-                import(SDK + "firebase-app.js"), import(SDK + "firebase-auth.js"), import(SDK + "firebase-database.js")]);
-            const fbApp = app.initializeApp(config);
-            await auth.signInAnonymously(auth.getAuth(fbApp));
-            db = database.getDatabase(fbApp);
-            fb = database;
-        }
+        await ensure();
         const id = await familyId(code);
         stateRef = fb.ref(db, `families/${id}/state`);
         inboxRef = fb.ref(db, `families/${id}/inbox`);

@@ -59,6 +59,8 @@ public class PatatState
     /// <summary>Incremented on every change by the baker; the highest version wins when devices meet.</summary>
     public long Version { get; set; }
     public bool Open { get; set; } = true;
+    /// <summary>Announce the family code on the baker's wifi network so new devices there can join.</summary>
+    public bool WifiJoin { get; set; } = true;
     public List<Snack> Snacks { get; set; } = [];
     public List<Order> Orders { get; set; } = [];
     public List<Batch> Batches { get; set; } = [];

@@ -21,6 +21,7 @@
 - De state hoort bij de **gezinscode**, niet bij een apparaat: elk apparaat bewaart de laatst ontvangen state in `patat.state.<code>`. `PatatState.Version` wordt bij elke wijziging van de bakker opgehoogd. Een niet-bakker stuurt bij `hello` zijn bewaarde state mee; de bakker neemt die over als hij een hogere `Version` heeft. Zo kan de bakker op een ander apparaat verder.
 - Andere apparaten sturen alleen `order` (JSON `Order`) of `cancel` (naam). Een verzonden bestelling blijft *pending* (`patat.pending`) en wordt opnieuw verstuurd bij elke ontvangen state, tot de state die bestelling (zelfde `Stamp`) bevat of in `Rejected` staat.
 - **Database (optioneel, Firebase Realtime Database):** als `wwwroot/firebase-config.js` is ingevuld, logt elk apparaat anoniem in en gebruikt `families/<sha256("patat:"+code)>/state` (state-JSON) en `/inbox` (`{type:"order",json}` of `{type:"cancel",person}`). De bakker verwerkt de inbox, schrijft de nieuwe state en verwijdert het inbox-item. Iedereen leest de state live, ook zonder online bakker-peer. Een nieuwere database-state (`Version`) wordt door de bakker overgenomen; is de database leeg, dan schrijft de bakker zijn lokale state. Zonder config (standaard `null`) werkt alles zoals hiervoor via Trystero. Zie `FIREBASE.md`.
+- **Zelfde wifi:** met de database meldt de bakker (als `WifiJoin` aan staat, standaard) de gezinscode onder `lan/<sha256(\"patat:lan:\"+publiek IP)>` (IP via api.ipify.org); uitzetten verwijdert de melding. Een apparaat zonder code (of dat ⚙ opent) zoekt daar en stelt de code voor (max. 12 uur oud).
 - Er hoort precies één snackbakker te zijn. Zonder online snackbakker kan niemand bestellen ("Wachten op de snackbakker…"), behalve in databasemodus: dan komen bestellingen in de inbox en verwerkt de bakker ze zodra hij de app opent.
 
 ## Regels
@@ -48,7 +49,7 @@ Oude opslag met codes als tekst wordt gelezen met het pakaantal van de snack.
 - `patat.name`, `patat.code`, `patat.bakker` ("1"), `patat.state.<code>` (alle apparaten; oude `patat.state` wordt eenmalig als terugval gelezen), `patat.pending` (alleen niet-bakker).
 
 ## Fouten herstellen
-- Verwijderen van een snack, *Standaardlijst terugzetten* en *Nieuwe ronde* vragen eerst om bevestiging.
+- Alles wat verwijdert vraagt eerst om bevestiging: snack verwijderen, bestelling verwijderen (bakker) of annuleren (eigen), code loskoppelen, *Standaardlijst terugzetten* en *Nieuwe ronde*.
 - Elke wijziging van de bakker (voorraad, snacks, mandjes, nieuwe ronde) is ongedaan te maken met *↶ Ongedaan maken* (max. 50 stappen, in het geheugen van dit apparaat). Herstel wordt als nieuwe versie gepubliceerd. Binnenkomende bestellingen zijn geen undo-stap.
 
 ## Changelog
@@ -75,3 +76,4 @@ in `patat.js` hersteld.
 - **Streepjescodes:** `Snack.Barcodes`. Scannen met de camera (BarcodeDetector of WASM-ponyfill via esm.sh). Bekende code: +1 pak. Onbekende code: koppelen aan bestaande snack of nieuwe snack (naam voorgesteld via Open Food Facts), met stuks per pak.
 - **Trillen + uitlijning:** `patat-buzz.js` (`window.patatBuzz(n)`): `navigator.vibrate` waar mogelijk, anders iOS 18+ haptic via verborgen `<input type=checkbox switch>`. 1 tik bij Start, 3 bij aflopen (elke 15 s). iOS staat dit alleen kort na een gebruikersactie toe. Voorraadrijen hebben vaste kolombreedtes zodat ze uitlijnen.
 - **Gezinscode wijzigen + Pak-keuze:** bakker kan voorraad meenemen naar een nieuwe gezinscode; *+ pak*-knop vervangen door keuzelijst met bekende verpakkingen.
+- **Mobiel, bevestigen, wifi:** voorraadrijen als kaarten op kleine schermen; bevestiging bij elk verwijderen; gezin herkennen op hetzelfde wifi-netwerk (uit te zetten door de bakker).

@@ -174,3 +174,14 @@ body.pt-alarm { animation: pt-alarm 1s steps(1) infinite; }
 	.pt-stock-row { grid-template-columns: 48px minmax(0, 1fr) minmax(0, 1fr) 40px; }
 	.pt-stock-row .pt-pack { flex: 0 0 auto; }
 }
+/* Small screens: every stock row is a card, so it is clear which buttons belong together. */
+@media (max-width: 680px) {
+	.pt-stock { display: grid; gap: 10px; }
+	.pt-stock-row:not(.head) { padding: 10px 10px 12px; border: 1px solid var(--pt-border); border-left: 4px solid var(--pt-accent, #e8a33d); border-radius: 12px; background: var(--pt-surface); box-shadow: 0 1px 3px rgba(0,0,0,.08); row-gap: 8px; }
+	.pt-stock-row.low:not(.head) { border-left-color: #e0b000; }
+	.pt-stock-row.empty:not(.head) { border-left-color: var(--pt-danger); }
+	.pt-stock-row > .name { font-weight: 600; }
+	.pt-stock-row > .pt-stepper { padding-top: 8px; border-top: 1px dashed var(--pt-border); }
+	.pt-stock-row > .pt-f { padding-top: 6px; border-top: 1px dashed var(--pt-border); }
+	.pt-stock-row > .pt-f:nth-of-type(1) { grid-area: f1; }
+}

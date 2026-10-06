@@ -200,6 +200,9 @@
 
     private async Task Unlink(Snack s, Barcode b)
     {
+        bool ok;
+        try { ok = await JS.InvokeAsync<bool>("confirm", $"Code {b.Code} loskoppelen van {s.Name}?"); } catch (JSException) { return; }
+        if (!ok) return;
         s.Barcodes.Remove(b);
         await Changed();
     }

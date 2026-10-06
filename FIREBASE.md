@@ -21,6 +21,13 @@ Zonder database werkt Patat via Trystero (de snackbakker moet dan online zijn). 
 		"inbox": { "$item": { ".validate": "newData.hasChild('type')" } },
 		"presence": { "$item": { ".validate": "!newData.exists() || newData.hasChild('name')" } }
 	  }
+	},
+	"lan": {
+	  "$net": {
+		".read": "auth != null",
+		".write": "auth != null",
+		".validate": "!newData.exists() || (newData.child('code').isString() && newData.child('code').val().length <= 30)"
+	  }
 	}
   }
 }

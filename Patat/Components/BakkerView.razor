@@ -174,7 +174,7 @@
 	private async Task Start(Batch b) { await Beep(0); _rang.Remove(b.Key); b.StartedUtc = DateTime.UtcNow; await Changed(); }
 	private Task Done(Batch b) { b.Done = true; return Changed(); }
 	private Task Reset(Batch b) { _rang.Remove(b.Key); b.Done = false; b.StartedUtc = null; return Changed(); }
-	private Task Cancel(string person) { Engine.Cancel(person); return Changed(); }
+	private async Task Cancel(string person) { if (!await JS.InvokeAsync<bool>("confirm", $"Bestelling van {person} verwijderen?")) return; Engine.Cancel(person); await Changed(); }
 	private async Task Finish() { if (!await JS.InvokeAsync<bool>("confirm", "Nieuwe ronde starten? De bestellingen gaan naar de geschiedenis.")) return; Engine.Finish(); await Changed(); }
 
 	public void Dispose()

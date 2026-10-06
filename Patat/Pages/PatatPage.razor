@@ -25,7 +25,15 @@
             <h2>Wie ben jij?</h2>
             <label>Je naam <input class="pt-input" @bind="_nameInput" placeholder="bijv. Sepp" maxlength="20" /></label>
             <label>Gezinscode <input class="pt-input" @bind="_codeInput" placeholder="zelfde code voor iedereen" maxlength="30" /></label>
-            <label class="pt-check"><input type="checkbox" @bind="_bakkerInput" /> Ik ben de snackbakker (dit apparaat bewaart voorraad en bestellingen)</label>
+			<label class="pt-check"><input type="checkbox" @bind="_bakkerInput" /> Ik ben de snackbakker (dit apparaat bewaart voorraad en bestellingen)</label>
+			@if (!string.IsNullOrEmpty(_lanCode) && !string.Equals(_lanCode, _codeInput.Trim(), StringComparison.OrdinalIgnoreCase))
+			{
+				<button class="pt-btn ghost" @onclick="() => _codeInput = _lanCode!">ðŸ“¶ Gezin op dit wifi-netwerk gevonden: gebruik code <b>@_lanCode</b></button>
+			}
+			@if (_bakker && _bakkerInput)
+			{
+				<label class="pt-check"><input type="checkbox" checked="@_engine.State.WifiJoin" @onchange="e => SetWifiJoin((bool)e.Value!)" /> Apparaten op mijn wifi-netwerk herkennen als gezin (stelt de gezinscode voor)</label>
+			}
             @if (_bakker && _bakkerInput && !string.IsNullOrWhiteSpace(_code) && !string.IsNullOrWhiteSpace(_codeInput) && !string.Equals(_codeInput.Trim(), _code, StringComparison.OrdinalIgnoreCase))
             {
                 <label class="pt-check"><input type="checkbox" @bind="_moveStock" /> Voorraad, codes en geschiedenis meenemen naar de nieuwe gezinscode (vervangt wat daar staat)</label>
@@ -44,7 +52,7 @@
                 <a class="pt-tab @(CurrentTab == "bakker" ? "active" : "")" href="bakker">👨‍🍳 Bakken</a>
                 <a class="pt-tab @(CurrentTab == "voorraad" ? "active" : "")" href="voorraad">📦 Voorraad</a>
             }
-            <button class="pt-tab small" @onclick="() => _editSetup = true">⚙ @_name@(_bakker ? " (bakker)" : "")</button>
+            <button class="pt-tab small" @onclick="OpenSetup">⚙ @_name@(_bakker ? " (bakker)" : "")</button>
         </div>
 
         @if (!string.IsNullOrEmpty(_msg))
@@ -130,7 +138,33 @@
     private string _name = "", _code = "", _nameInput = "", _codeInput = "", _note = "";
     private string? _msg;
     private int _peers;
-    private bool _moveStock = true, _forceUpload;
+	private bool _moveStock = true, _forceUpload;
+	private string? _lanCode;
+
+	private async Task SetWifiJoin(bool on)
+	{
+		Remember();
+		_engine.State.WifiJoin = on;
+		await Publish();
+		await Announce();
+	}
+
+	/// <summary>Baker: (un)publish the family code for devices on the same wifi network.</summary>
+	private async Task Announce()
+	{
+		if (_db is null || !_bakker || string.IsNullOrWhiteSpace(_code)) return;
+		await JsVoid(_db, "lanAnnounce", _code, _engine.State.WifiJoin);
+	}
+
+	/// <summary>Non-baker: look for a family announced on this wifi network.</summary>
+	private async Task FindLan()
+	{
+		if (_db is null || _bakker) return;
+		_lanCode = await JsGet<string?>(_db, "lanFind");
+		if (string.IsNullOrWhiteSpace(_lanCode)) _lanCode = null;
+		else if (string.IsNullOrWhiteSpace(_codeInput)) _codeInput = _lanCode;
+		StateHasChanged();
+	}
     private List<OnlineUser> _online = [];
     private sealed record OnlineUser(string Name, bool Baker);
     private Order? _pending;
@@ -158,7 +192,8 @@
         }
         LoadDraft();
         _self = DotNetObjectReference.Create(this);
-        await Connect();
+		await Connect();
+		if (string.IsNullOrWhiteSpace(_code)) _ = FindLan();
         _ready = true;
         StateHasChanged();
     }
@@ -170,7 +205,8 @@
         _hasState = false;
         await JsVoid(_js, "start", _self, _code, _bakker, StateKey);
         _dbSeen = false;
-        _dbOn = await JsGet<bool>(_db, "start", _self, _code, _bakker, _name);
+		_dbOn = await JsGet<bool>(_db, "start", _self, _code, _bakker, _name);
+		if (_dbOn) await Announce();
         StateHasChanged();
     }
 
@@ -193,7 +229,13 @@
         StateHasChanged();
     }
 
-    private async Task SaveSetup()
+	private async Task OpenSetup()
+	{
+		_editSetup = true;
+		await FindLan();
+	}
+
+	private async Task SaveSetup()
     {
         if (_js is null) return;
         var reconnect = _codeInput.Trim() != _code || _bakkerInput != _bakker || _nameInput.Trim() != _name;
@@ -254,6 +296,7 @@
 
     private async Task CancelOrder()
     {
+        if (!await JsGet<bool>(JS, "confirm", "Je bestelling annuleren?")) return;
         _draft.Clear();
         _note = "";
         _draftTouched = false;
