@@ -43,13 +43,18 @@
             <div class="pt-msg @(_msgError ? "error" : "")" @onclick="() => _msg = null">@_msg</div>
         }
 
+        @if (_bakker && _undo.Count > 0 && CurrentTab is "bakker" or "voorraad")
+        {
+            <div class="pt-undo"><button class="pt-btn ghost small" @onclick="Undo" title="Laatste wijziging ongedaan maken">↶ Ongedaan maken (@_undo.Count)</button></div>
+        }
+
         @if (CurrentTab == "bakker" && _bakker)
         {
-            <BakkerView Engine="_engine" Changed="Publish" />
+            <BakkerView Engine="_engine" Changed="Edit" />
         }
         else if (CurrentTab == "voorraad" && _bakker)
         {
-            <VoorraadView Engine="_engine" Changed="Publish" />
+            <VoorraadView Engine="_engine" Changed="Edit" />
         }
         else if (!_bakker && !_hasState)
         {
@@ -253,6 +258,35 @@
             await JsVoid(_js, "save", StateKey + ".backup-" + DateTime.UtcNow.ToString("yyyyMMddHHmmss"), json);
             Show("⚠ Opgeslagen voorraad kon niet gelezen worden; er is een reservekopie bewaard.", true);
         }
+        _lastJson = _engine.ToJson();
+    }
+
+    // Undo: snapshots of the state before each change by the baker (kept in memory, newest last).
+    private readonly List<string> _undo = [];
+    private string? _lastJson;
+
+    private void Remember()
+    {
+        if (_lastJson is null || _lastJson == _engine.ToJson()) return;
+        _undo.Add(_lastJson);
+        if (_undo.Count > 50) _undo.RemoveAt(0);
+    }
+
+    /// <summary>A change made by the baker in this app (undoable), as opposed to incoming orders.</summary>
+    private Task Edit() { Remember(); return Publish(); }
+
+    private async Task Undo()
+    {
+        if (_undo.Count == 0) return;
+        var version = _engine.State.Version;
+        var json = _undo[^1];
+        _undo.RemoveAt(_undo.Count - 1);
+        if (!_engine.Load(json)) return;
+        _engine.State.Version = version;
+        _lastJson = null;
+        await Publish();
+        _lastJson = _engine.ToJson();
+        Show("↶ Laatste wijziging ongedaan gemaakt.");
     }
 
     private async Task Publish()
@@ -260,6 +294,7 @@
         if (_js is null || !_bakker) return;
         _engine.State.Version++;
         var json = _engine.ToJson();
+        _lastJson = json;
         await JsVoid(_js, "save", StateKey, json);
         await JsVoid(_js, "broadcast", json, null);
         if (_dbOn) await JsVoid(_db, "save", json);

@@ -1,4 +1,4 @@
-﻿@implements IDisposable
+@implements IDisposable
 @inject IJSRuntime JS
 
 <div class="pt-card">
@@ -170,7 +170,7 @@
 	private Task Done(Batch b) { b.Done = true; return Changed(); }
 	private Task Reset(Batch b) { _rang.Remove(b.Key); b.Done = false; b.StartedUtc = null; return Changed(); }
 	private Task Cancel(string person) { Engine.Cancel(person); return Changed(); }
-	private Task Finish() { Engine.Finish(); return Changed(); }
+	private async Task Finish() { if (!await JS.InvokeAsync<bool>("confirm", "Nieuwe ronde starten? De bestellingen gaan naar de geschiedenis.")) return; Engine.Finish(); await Changed(); }
 
 	public void Dispose()
 	{

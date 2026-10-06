@@ -1,3 +1,4 @@
+@inject IJSRuntime JS
 <div class="pt-card">
     <h2>📦 Voorraad beheren</h2>
     <p class="pt-muted">Snacks met dezelfde frituurgroep mogen samen gebakken worden. Laat de groep leeg om een snack altijd los te bakken.</p>
@@ -81,17 +82,19 @@
         return Changed();
     }
 
-    private Task Remove(Snack s)
+    private async Task Remove(Snack s)
     {
+        if (!await JS.InvokeAsync<bool>("confirm", $"{s.Name} verwijderen? (Ongedaan maken kan daarna nog.)")) return;
         Engine.State.Snacks.Remove(s);
-        return Changed();
+        await Changed();
     }
 
-    private Task Defaults()
+    private async Task Defaults()
     {
+        if (!await JS.InvokeAsync<bool>("confirm", "Standaardlijst terugzetten? Al je eigen snacks, voorraad en bestellingen worden vervangen. (Ongedaan maken kan daarna nog.)")) return;
         Engine.State.Snacks = PatatEngine.DefaultSnacks();
         Engine.State.Orders.Clear();
         Engine.State.Batches.Clear();
-        return Changed();
+        await Changed();
     }
 }

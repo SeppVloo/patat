@@ -146,3 +146,6 @@ body.pt-alarm { animation: pt-alarm 1s steps(1) infinite; }
 	body.pt-alarm { animation-name: pt-alarm-dark; }
 	@keyframes pt-alarm-dark { 50% { background: #7a4a00; } }
 }
+
+.pt-undo { display: flex; justify-content: flex-end; margin: 0 0 .5rem; }
+

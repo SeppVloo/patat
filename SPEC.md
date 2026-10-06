@@ -43,6 +43,10 @@
 - Onleesbare opgeslagen state wordt nooit overschreven met de standaardlijst: er wordt eerst een reservekopie `patat.state.backup-<tijd>` gemaakt en een melding getoond.
 - `patat.name`, `patat.code`, `patat.bakker` ("1"), `patat.state.<code>` (alle apparaten; oude `patat.state` wordt eenmalig als terugval gelezen), `patat.pending` (alleen niet-bakker).
 
+## Fouten herstellen
+- Verwijderen van een snack, *Standaardlijst terugzetten* en *Nieuwe ronde* vragen eerst om bevestiging.
+- Elke wijziging van de bakker (voorraad, snacks, mandjes, nieuwe ronde) is ongedaan te maken met *↶ Ongedaan maken* (max. 50 stappen, in het geheugen van dit apparaat). Herstel wordt als nieuwe versie gepubliceerd. Binnenkomende bestellingen zijn geen undo-stap.
+
 ## Changelog
 - **Basis:** bestellen per apparaat, bakker-overzicht met mandjes per frituurgroep en timers, voorraadbeheer, synchronisatie via Trystero, in-app hulp.
 - **Eigen repo:** losgetrokken uit SeppsGameCenter (geschiedenis behouden) naar standalone Blazor WebAssembly-app met eigen solution, GitHub Pages-workflow en PWA-manifest. Routes nu `/`, `/bakker`, `/voorraad`. JS-interop afgeschermd met try/catch (`JsVoid`/`JsGet`).
@@ -58,3 +62,4 @@ in `patat.js` hersteld.
 - **Meer snack-iconen:** 12 extra iconen voor gangbare Nederlandse diepvries-/cafetariasnacks (o.a. gehaktbal, kaasstengel, sjasliek, ribster, braadworst, kipvleugels, uienringen, vlammetjes, kibbeling, vissticks, kroepoek, kipschnitzel) met automatische naamherkenning (ook picanto, bamihap, curryworst, lekkerbek).
 - **Nog meer iconen:** chicken tenders, eierbal, Vietnamese loempia, picanto (eigen icoon) en krokettenvarianten (rund, kalf, garnaal, saté, goulash, kip, groente, kaas; aangebeten kroket met kleur van de vulling).
 - **Naam uit icoon:** een icoon kiezen neemt de icoonnaam over als naam, zolang de naam nog niet met de hand is aangepast (leeg, 'Nieuwe snack' of een icoonnaam). Daarna kan het icoon gewoon weer op *Auto* (raden op naam).
+- **Ongedaan maken:** bevestiging bij destructieve acties en een undo-knop voor de bakker.
