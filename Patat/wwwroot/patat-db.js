@@ -29,28 +29,51 @@ async function ensure() {
 
 // Same wifi = same public IP address. The baker announces the family code under lan/<sha256(ip)>;
 // a new device on that network can then offer to join. Entries older than 12 hours are ignored.
-async function lanRef() {
-    const r = await fetch("https://api.ipify.org?format=json");
-    const ip = (await r.json()).ip;
-    return fb.ref(db, `lan/${await familyId("lan:" + ip)}`);
+async function publicIp() {
+    const sources = [
+        ["https://api.ipify.org?format=json", j => j.ip],
+        ["https://api64.ipify.org?format=json", j => j.ip],
+        ["https://ipv4.icanhazip.com", null]];
+    for (const [url, pick] of sources) {
+        try {
+            const r = await fetch(url, { cache: "no-store" });
+            if (!r.ok) continue;
+            const ip = pick ? pick(await r.json()) : (await r.text()).trim();
+            if (ip) return ip;
+        } catch { }
+    }
+    throw new Error("internetadres niet op te vragen (geblokkeerd?)");
 }
 
+async function lanRef() {
+    return fb.ref(db, `lan/${await familyId("lan:" + await publicIp())}`);
+}
+
+function why(e) {
+    const m = String(e?.message || e);
+    return /permission/i.test(m) ? "database weigert (Firebase-regels voor 'lan' nog niet geplakt?)" : m;
+}
+
+// Returns "" when OK, else the reason it failed.
 export async function lanAnnounce(code, on) {
-    if (!enabled()) return;
+    if (!enabled()) return "geen online database ingesteld";
     try {
         await ensure();
         const ref = await lanRef();
         if (on) await fb.set(ref, { code, at: Date.now() }); else await fb.remove(ref);
-    } catch (e) { console.warn("Wifi-gezin niet bijgewerkt", e); }
+        return "";
+    } catch (e) { console.warn("Wifi-gezin niet bijgewerkt", e); return why(e); }
 }
 
+// Returns JSON {code, error}.
 export async function lanFind() {
-    if (!enabled()) return "";
+    if (!enabled()) return JSON.stringify({ code: "", error: "geen online database ingesteld" });
     try {
         await ensure();
         const v = (await fb.get(await lanRef())).val();
-        return v && v.code && Date.now() - (v.at || 0) < 12 * 3600 * 1000 ? v.code : "";
-    } catch { return ""; }
+        const code = v && v.code && Date.now() - (v.at || 0) < 24 * 3600 * 1000 ? v.code : "";
+        return JSON.stringify({ code, error: code ? "" : "geen snackbakker gevonden op dit netwerk" });
+    } catch (e) { return JSON.stringify({ code: "", error: why(e) }); }
 }
 
 export async function start(ref, code, host, name) {

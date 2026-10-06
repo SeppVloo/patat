@@ -78,3 +78,4 @@ in `patat.js` hersteld.
 - **Gezinscode wijzigen + Pak-keuze:** bakker kan voorraad meenemen naar een nieuwe gezinscode; *+ pak*-knop vervangen door keuzelijst met bekende verpakkingen.
 - **Mobiel, bevestigen, wifi:** voorraadrijen als kaarten op kleine schermen; bevestiging bij elk verwijderen; gezin herkennen op hetzelfde wifi-netwerk (uit te zetten door de bakker).
 - **Favicon:** eigen icoon (patatzak met friet op donkere achtergrond) als `favicon.svg`, `favicon-32.png`, `apple-touch-icon.png` (180, vierkant voor iOS) en PWA-iconen `icon-192/512.png`.
+- **Wifi-herkenning zichtbaar:** het instelscherm toont nu of het zoeken/aanmelden lukt en waarom niet (bijv. Firebase-regels voor `lan` ontbreken, internetadres niet op te vragen, geen bakker op dit netwerk), met *Zoek opnieuw*. Meerdere IP-diensten als terugval; melding geldig 24 uur. Status zonder code: *Nog geen gezinscode*.

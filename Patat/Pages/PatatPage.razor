@@ -30,6 +30,10 @@
 			{
 				<button class="pt-btn ghost" @onclick="() => _codeInput = _lanCode!">ðŸ“¶ Gezin op dit wifi-netwerk gevonden: gebruik code <b>@_lanCode</b></button>
 			}
+            @if (!string.IsNullOrEmpty(_lanInfo))
+            {
+                <p class="pt-muted">@_lanInfo @if (!_bakkerInput) { <button class="pt-btn ghost small" @onclick="FindLan">🔄 Zoek opnieuw</button> }</p>
+            }
 			@if (_bakker && _bakkerInput)
 			{
 				<label class="pt-check"><input type="checkbox" checked="@_engine.State.WifiJoin" @onchange="e => SetWifiJoin((bool)e.Value!)" /> Apparaten op mijn wifi-netwerk herkennen als gezin (stelt de gezinscode voor)</label>
@@ -139,7 +143,7 @@
     private string? _msg;
     private int _peers;
 	private bool _moveStock = true, _forceUpload;
-	private string? _lanCode;
+    private string? _lanCode, _lanInfo;
 
 	private async Task SetWifiJoin(bool on)
 	{
@@ -153,16 +157,31 @@
 	private async Task Announce()
 	{
 		if (_db is null || !_bakker || string.IsNullOrWhiteSpace(_code)) return;
-		await JsVoid(_db, "lanAnnounce", _code, _engine.State.WifiJoin);
+        var err = await JsGet<string?>(_db, "lanAnnounce", _code, _engine.State.WifiJoin);
+        _lanInfo = string.IsNullOrEmpty(err)
+            ? (_engine.State.WifiJoin ? "📶 Gezinscode is zichtbaar voor apparaten op dit wifi-netwerk." : null)
+            : "📶 Wifi-herkenning werkt niet: " + err;
 	}
 
 	/// <summary>Non-baker: look for a family announced on this wifi network.</summary>
 	private async Task FindLan()
 	{
 		if (_db is null || _bakker) return;
-		_lanCode = await JsGet<string?>(_db, "lanFind");
-		if (string.IsNullOrWhiteSpace(_lanCode)) _lanCode = null;
-		else if (string.IsNullOrWhiteSpace(_codeInput)) _codeInput = _lanCode;
+        _lanInfo = "📶 Zoeken naar je gezin op dit wifi-netwerk…";
+        StateHasChanged();
+        _lanCode = null;
+        var json = await JsGet<string?>(_db, "lanFind");
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(string.IsNullOrEmpty(json) ? "{}" : json);
+            var r = doc.RootElement;
+            var code = r.TryGetProperty("code", out var c) ? c.GetString() : null;
+            var error = r.TryGetProperty("error", out var e) ? e.GetString() : "geen antwoord";
+            _lanCode = string.IsNullOrWhiteSpace(code) ? null : code;
+            _lanInfo = _lanCode is null ? "📶 Geen gezin gevonden: " + error : null;
+        }
+        catch (System.Text.Json.JsonException) { _lanInfo = null; }
+        if (_lanCode is not null && string.IsNullOrWhiteSpace(_codeInput)) _codeInput = _lanCode;
 		StateHasChanged();
 	}
     private List<OnlineUser> _online = [];
@@ -173,7 +192,7 @@
     private string CurrentTab => (Tab ?? "").ToLowerInvariant();
     private string StateKey => KeyState + "." + _code.Trim().ToLowerInvariant();
     private bool Connected => _bakker || _hasState;
-    private string StatusText => (_dbOn ? "☁ " : "") + (_bakker ? $"👨‍🍳 Bakker · {_peers} verbonden" : _hasState ? "🟢 Verbonden" : "🔴 Niet verbonden");
+    private string StatusText => (_dbOn ? "☁ " : "") + (_bakker ? $"👨‍🍳 Bakker · {_peers} verbonden" : _hasState ? "🟢 Verbonden" : string.IsNullOrWhiteSpace(_code) ? "⚪ Nog geen gezinscode" : "🔴 Niet verbonden");
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
