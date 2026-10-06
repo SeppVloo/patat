@@ -50,22 +50,34 @@
     @if (_showList)
     {
         <div class="pt-codes">
+            <div class="pt-codes-head">
+                <b>🏷 Gekoppelde codes</b>
+                <input class="pt-input" placeholder="🔍 Zoek snack, merk of code" @bind="_filter" @bind:event="oninput" />
+            </div>
             @if (!Engine.State.Snacks.Any(s => s.Barcodes.Count > 0))
             {
-                <p class="pt-muted">Nog geen streepjescodes gekoppeld.</p>
+                <p class="pt-muted">Nog geen streepjescodes gekoppeld. Scan een pak om te beginnen.</p>
             }
-            @foreach (var s in Engine.State.Snacks.Where(s => s.Barcodes.Count > 0).OrderBy(s => s.Name))
+            @foreach (var s in CodeSnacks())
             {
                 <div class="pt-codes-snack">
-                    <b>@s.Name</b>
-                    @foreach (var b in s.Barcodes.ToList())
+                    <div class="pt-codes-title">
+                        <SnackIcon Snack="s" Size="28" />
+                        <b>@s.Name</b>
+                        <span class="pt-badge">@s.Barcodes.Count @(s.Barcodes.Count == 1 ? "code" : "codes")</span>
+                    </div>
+                    @foreach (var b in s.Barcodes.Where(b => Matches(s, b)).ToList())
                     {
                         <div class="pt-code-row">
-                            <code>@b.Code</code>
-                            <span class="pt-muted">@b.Label</span>
-                            <input class="pt-input num" type="number" min="1" max="200" title="Stuks per pak" value="@b.PackSize" @onchange="e => SetPack(b, e.Value)" />
-                            <span class="pt-muted">st.</span>
-                            <button class="pt-btn ghost small" title="Code ontkoppelen" @onclick="() => Unlink(s, b)">✕</button>
+                            <div class="pt-code-main">
+                                <input class="pt-input pt-code-label" placeholder="Merk / omschrijving" value="@b.Label" @onchange="e => SetLabel(b, e.Value)" maxlength="40" />
+                                <code>@b.Code</code>
+                            </div>
+                            <label class="pt-code-pack" title="Stuks per pak">
+                                <input class="pt-input num" type="number" min="1" max="200" value="@b.PackSize" @onchange="e => SetPack(b, e.Value)" />
+                                <span>st.</span>
+                            </label>
+                            <button class="pt-round danger" title="Code loskoppelen" @onclick="() => Unlink(s, b)">🗑</button>
                         </div>
                     }
                 </div>
@@ -189,6 +201,24 @@
         s.Stock += b.PackSize;
         Show($"✅ Code gekoppeld aan {s.Name}: +{b.PackSize} (nu {s.Stock})");
         _unknown = null;
+        await Changed();
+    }
+
+    private string _filter = "";
+
+    private IEnumerable<Snack> CodeSnacks() =>
+        Engine.State.Snacks.Where(s => s.Barcodes.Any(b => Matches(s, b))).OrderBy(s => s.Name, StringComparer.CurrentCultureIgnoreCase);
+
+    private bool Matches(Snack s, Barcode b)
+    {
+        var f = _filter.Trim();
+        return f == "" || s.Name.Contains(f, StringComparison.CurrentCultureIgnoreCase)
+            || b.Label.Contains(f, StringComparison.CurrentCultureIgnoreCase) || b.Code.Contains(f);
+    }
+
+    private async Task SetLabel(Barcode b, object? value)
+    {
+        b.Label = (value?.ToString() ?? "").Trim();
         await Changed();
     }
 
