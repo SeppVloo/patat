@@ -54,6 +54,8 @@ public class PatatState
     public Dictionary<string, string> Rejected { get; set; } = [];
     /// <summary>Finished rounds of the last year.</summary>
     public List<Round> History { get; set; } = [];
+    /// <summary>Fry groups in the order the baker wants them shown (unlisted groups follow alphabetically).</summary>
+    public List<string> GroupOrder { get; set; } = ["Patat"];
 }
 
 public record PlannedBatch(string Key, string Title, int Minutes, List<(Snack Snack, int Count)> Items);
@@ -98,6 +100,39 @@ public class PatatEngine
         if (string.IsNullOrWhiteSpace(json)) return true;
         try { State = JsonSerializer.Deserialize<PatatState>(json, Json) ?? State; return true; }
         catch (Exception ex) when (ex is JsonException or NotSupportedException) { return false; }
+    }
+
+    /// <summary>All fry groups in display order: the baker's order first, then the rest alphabetically, ungrouped last.</summary>
+    public List<string> Groups()
+    {
+        var used = State.Snacks.Select(s => s.FryGroup?.Trim() ?? "").Where(g => g != "").Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        var ordered = State.GroupOrder.Where(g => used.Contains(g, StringComparer.OrdinalIgnoreCase)).ToList();
+        ordered.AddRange(used.Where(g => !ordered.Contains(g, StringComparer.OrdinalIgnoreCase)).Order(StringComparer.CurrentCultureIgnoreCase));
+        return ordered;
+    }
+
+    /// <summary>Moves a group one place up (-1) or down (+1) in the display order.</summary>
+    public void MoveGroup(string group, int delta)
+    {
+        var list = Groups();
+        var i = list.FindIndex(g => string.Equals(g, group, StringComparison.OrdinalIgnoreCase));
+        var j = i + delta;
+        if (i < 0 || j < 0 || j >= list.Count) return;
+        (list[i], list[j]) = (list[j], list[i]);
+        State.GroupOrder = list;
+    }
+
+    /// <summary>Snacks sorted: available first, then by group order, then alphabetically.</summary>
+    public List<Snack> Sorted(Func<Snack, bool> available)
+    {
+        var groups = Groups();
+        int Rank(Snack s)
+        {
+            var i = groups.FindIndex(g => string.Equals(g, s.FryGroup?.Trim(), StringComparison.OrdinalIgnoreCase));
+            return i < 0 ? int.MaxValue : i;
+        }
+        return State.Snacks.OrderBy(s => available(s) ? 0 : 1).ThenBy(Rank)
+            .ThenBy(s => s.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
     }
 
     public Snack? Find(string id) => State.Snacks.FirstOrDefault(s => s.Id == id);

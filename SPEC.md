@@ -64,3 +64,4 @@ in `patat.js` hersteld.
 - **Naam uit icoon:** een icoon kiezen neemt de icoonnaam over als naam, zolang de naam nog niet met de hand is aangepast (leeg, 'Nieuwe snack' of een icoonnaam). Daarna kan het icoon gewoon weer op *Auto* (raden op naam).
 - **Ongedaan maken:** bevestiging bij destructieve acties en een undo-knop voor de bakker.
 - **Icoonkiezer volgt focus:** staat de icoonkiezer open en ga je naar een andere snackregel (klik of Tab), dan schuift de kiezer mee en past hij die snack aan.
+- **Sortering:** bestellen en voorraad tonen snacks op frituurgroep (volgorde instelbaar via `GroupOrder`, standaard Patat bovenaan; overige groepen alfabetisch, zonder groep als laatste) en daarbinnen alfabetisch. Snacks zonder voorraad staan altijd onderaan.

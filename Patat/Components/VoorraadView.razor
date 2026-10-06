@@ -6,7 +6,7 @@
         <div class="pt-stock-row head">
             <span></span><span>Snack</span><span>Voorraad</span><span>Per pak</span><span>Min.</span><span>Frituurgroep</span><span></span>
         </div>
-        @foreach (var s in Engine.State.Snacks)
+        @foreach (var s in Engine.Sorted(x => x.Stock > 0))
         {
             <div class="pt-stock-row @(s.Stock <= 0 ? "empty" : s.Stock <= 2 ? "low" : "")" @key="s.Id" @onfocusin="() => Focus(s)">
                 <button class="pt-iconbtn" title="Icoon kiezen" @onclick="() => TogglePick(s)"><SnackIcon Snack="s" Size="34" /></button>
@@ -38,6 +38,23 @@
             }
         }
     </div>
+    @if (Engine.Groups() is { Count: > 1 } groups)
+    {
+        <h3 class="pt-sub">Volgorde frituurgroepen</h3>
+        <ol class="pt-groups">
+            @for (var i = 0; i < groups.Count; i++)
+            {
+                var g = groups[i];
+                var first = i == 0;
+                var last = i == groups.Count - 1;
+                <li>
+                    <span>@g</span>
+                    <button class="pt-round" title="Omhoog" disabled="@first" @onclick="() => MoveGroup(g, -1)">▲</button>
+                    <button class="pt-round" title="Omlaag" disabled="@last" @onclick="() => MoveGroup(g, 1)">▼</button>
+                </li>
+            }
+        </ol>
+    }
     <div class="pt-row">
         <button class="pt-btn" @onclick="AddSnack">➕ Snack toevoegen</button>
         <button class="pt-btn ghost" @onclick="Defaults">Standaardlijst terugzetten</button>
@@ -53,6 +70,8 @@
     [Parameter] public Func<Task> Changed { get; set; } = () => Task.CompletedTask;
 
     private string? _pick;
+
+    private Task MoveGroup(string g, int delta) { Engine.MoveGroup(g, delta); return Changed(); }
     private bool _moved;
 
     // An open icon picker follows the row that has the focus.

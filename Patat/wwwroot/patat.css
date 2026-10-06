@@ -149,3 +149,6 @@ body.pt-alarm { animation: pt-alarm 1s steps(1) infinite; }
 
 .pt-undo { display: flex; justify-content: flex-end; margin: 0 0 .5rem; }
 
+.pt-groups { list-style: none; padding: 0; margin: 0 0 1rem; display: grid; gap: .35rem; max-width: 360px; }
+.pt-groups li { display: flex; align-items: center; gap: .5rem; padding: .35rem .6rem; border: 1px solid var(--pt-border); border-radius: 10px; background: var(--pt-surface); }
+.pt-groups li span { flex: 1; font-weight: 600; }

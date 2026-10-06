@@ -72,7 +72,7 @@
                     <p class="pt-msg error">🔒 De bestellingen zijn gesloten.</p>
                 }
                 <div class="pt-snacks">
-                    @foreach (var s in _engine.State.Snacks)
+                    @foreach (var s in _engine.Sorted(x => _engine.MaxFor(x.Id, _name) > 0))
                     {
                         var max = _engine.MaxFor(s.Id, _name);
                         var n = _draft.GetValueOrDefault(s.Id);
