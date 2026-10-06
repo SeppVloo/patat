@@ -58,8 +58,15 @@
     private Task SetIcon(Snack s, string key)
     {
         s.Icon = key;
+        // Take over the icon's name as long as the user hasn't typed a name himself.
+        if (SnackIcons.Find(key) is { } i && i.Key != "snack" && IsDefaultName(s.Name)) s.Name = i.Title;
         return Changed();
     }
+
+    private static bool IsDefaultName(string? name) =>
+        string.IsNullOrWhiteSpace(name) || name.Trim() == NewName || SnackIcons.All.Any(i => i.Title == name.Trim());
+
+    private const string NewName = "Nieuwe snack";
 
     private Task Add(Snack s, int delta)
     {
@@ -69,7 +76,7 @@
 
     private Task AddSnack()
     {
-        Engine.State.Snacks.Add(new Snack { Name = "Nieuwe snack" });
+        Engine.State.Snacks.Add(new Snack { Name = NewName });
         _pick = Engine.State.Snacks[^1].Id;
         return Changed();
     }
