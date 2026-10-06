@@ -58,13 +58,19 @@ export function stop() {
     stream = null;
 }
 
+// Returns JSON {label, text}: label = brand + product name, text = everything useful for matching a snack
+// (names, generic name, categories, quantity). Empty object when the product is unknown.
 export async function lookup(code) {
     try {
-        const r = await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json?fields=product_name_nl,product_name,brands`);
-        if (!r.ok) return "";
+        const fields = "product_name_nl,product_name,generic_name_nl,generic_name,brands,categories,quantity,product_quantity_unit";
+        const r = await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json?fields=${fields}`);
+        if (!r.ok) return "{}";
         const p = (await r.json()).product;
-        const name = (p?.product_name_nl || p?.product_name || "").trim();
-        const brand = (p?.brands || "").split(",")[0].trim();
-        return brand && name && !name.toLowerCase().includes(brand.toLowerCase()) ? `${brand} ${name}` : name;
-    } catch { return ""; }
+        if (!p) return "{}";
+        const name = (p.product_name_nl || p.product_name || "").trim();
+        const brand = (p.brands || "").split(",")[0].trim();
+        const label = brand && name && !name.toLowerCase().includes(brand.toLowerCase()) ? `${brand} ${name}` : name;
+        const text = [p.product_name_nl, p.product_name, p.generic_name_nl, p.generic_name, p.categories, p.quantity].filter(x => x).join(" | ");
+        return JSON.stringify({ label, text });
+    } catch { return "{}"; }
 }

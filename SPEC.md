@@ -29,7 +29,8 @@
 - Bestellen kan alleen als `Open` aan staat (schakelaar op het bak-scherm).
 - **Nieuwe ronde** wist bestellingen, mandjes en weigeringen; voorraad blijft zoals hij is.
 - Elke snack heeft **stuks per pak** (`PackSize`, standaard 1). Op het voorraadscherm telt de knop **+ pak (N)** in één keer een heel pak bij de voorraad op.
-- **Streepjescodes:** een snack kan meerdere codes hebben (`Barcodes`: `{code, packSize, label}`), bijv. verschillende merken of pakgroottes; een gescande code telt het aantal stuks van díe code op. Scannen gebeurt via canvas-frames met `BarcodeDetector` (of de ZXing-ponyfill, ook op iPhone); de code kan ook worden ingetypt. Onder **🏷 Codes** staan alle gekoppelde codes per snack, met aanpasbaar aantal en ontkoppelknop. Oude opslag met codes als tekst wordt gelezen met het pakaantal van de snack.
+Oude opslag met codes als tekst wordt gelezen met het pakaantal van de snack.
+- **Herkennen:** codes worden vergeleken zonder voorloopnullen (UPC-A = EAN-13 met 0). Bij een nieuwe code haalt de app naam, merk, categorieën en hoeveelheid op bij Open Food Facts; `MatchSnack` kiest de snack waarvan woorden uit de naam voorkomen (anders via het icoon-trefwoord) en `GuessPack` leest het aantal stuks ("10 stuks", "10 x 70 g"). De gebruiker bevestigt alleen.
 - **Online:** in databasemodus meldt elk apparaat zich onder `families/<id>/presence` (naam, bakker); Firebase verwijdert de melding bij verbreken (`onDisconnect`). Bovenaan staat wie er online is.
 - Elke snack heeft een **icoon** (`Icon`): sleutel uit de eigen SVG-catalogus `SnackIcons` (patat, frikandel, frikandel speciaal, kroket, kipcorn, kaassoufflé, bitterbal, berenklauw, loempia, mexicano, viandel, bamischijf, nasibal, kipnuggets, burger, gehaktbal, kaasstengel, sjasliek, ribster, braadworst, kipvleugels, uienringen, vlammetjes, kibbeling/vis, vissticks, kroepoek, kipschnitzel, saus, snack), `emoji` (eigen emoji) of leeg = automatisch raden op naam. Kiezen via de icoonknop op het voorraadscherm.
 
@@ -56,7 +57,8 @@
 - **Pakken + nieuwe stijl:** snacks hebben stuks per pak met een *+ pak*-knop om de voorraad snel op te hogen. Professionelere, rustige vormgeving (neutrale kleuren, subtiele schaduwen, segment-tabs).
 - **Voorraad blijft na redeploy:** Trystero lazy geladen (opslag werkt los van de CDN); onleesbare state krijgt een reservekopie i.p.v. een stille reset.
 - **Eigen domein:** `wwwroot/CNAME` = `patat.vloo.nl`; site draait daardoor vanaf `/` (base href blijft `/`).
-- **Codes & online:** betrouwbaarder scannen (canvas-frames, autofocus, meer formaten), code intypen, meerdere codes per snack met eigen pakaantal en merk, overzicht van alle codes, en lijst van wie er online is (Firebase presence).
+lijst van wie er online is (Firebase presence).
+- **Slimmer koppelen:** nieuwe code kiest automatisch de snack en het pakaantal op basis van Open Food Facts; UPC/EAN-varianten van dezelfde code worden herkend. Fix: opgeslagen codes (objecten) werden niet goed ingelezen.
 in `patat.js` hersteld.
 - **Iconen + database:** eigen SVG-iconen per snack met kiezer en automatisch raden voor nieuwe snacks; optionele Firebase Realtime Database als gedeelde opslag per gezinscode (inbox voor bestellingen), met Trystero als terugval.
 - **Geschiedenis, piep, mandjes:** bestelgeschiedenis tot een jaar; geluidssignaal als de baktimer verloopt; alleen gelijke baktijden samen in een mandje.

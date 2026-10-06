@@ -150,7 +150,26 @@
             _newName = "";
             Show($"Nieuwe code {code}: kies de snack of maak een nieuwe aan.");
             StateHasChanged();
-            try { _label = await (await Js()).InvokeAsync<string>("lookup", code); } catch (JSException) { }
+            try
+            {
+                var json = await (await Js()).InvokeAsync<string>("lookup", code);
+                using var doc = System.Text.Json.JsonDocument.Parse(string.IsNullOrEmpty(json) ? "{}" : json);
+                string Get(string n) => doc.RootElement.TryGetProperty(n, out var v) ? v.GetString() ?? "" : "";
+                _label = Get("label");
+                var text = Get("text");
+                var all = _label + " | " + text;
+                var match = Engine.MatchSnack(all);
+                if (match is not null)
+                {
+                    _target = match.Id;
+                    _pack = Math.Max(1, match.PackSize);
+                }
+                if (PatatEngine.GuessPack(all) is > 0 and var n) _pack = n;
+                Show(_label == ""
+                    ? $"Nieuwe code {code}: onbekend product, kies de snack."
+                    : match is null ? $"Nieuwe code: {_label}. Kies de snack." : $"Nieuwe code: {_label}. Herkend als {match.Name}, klopt dat?");
+            }
+            catch (Exception ex) when (ex is JSException or System.Text.Json.JsonException) { }
             _newName = _label;
         }
         StateHasChanged();

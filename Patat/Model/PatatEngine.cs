@@ -156,7 +156,48 @@ public class PatatEngine
     public Snack? Find(string id) => State.Snacks.FirstOrDefault(s => s.Id == id);
 
     public (Snack Snack, Barcode Code)? ByBarcode(string code) =>
-        State.Snacks.SelectMany(s => s.Barcodes.Select(b => ((Snack Snack, Barcode Code)?)(s, b))).FirstOrDefault(x => x!.Value.Code.Code == code);
+        State.Snacks.SelectMany(s => s.Barcodes.Select(b => ((Snack Snack, Barcode Code)?)(s, b))).FirstOrDefault(x => SameCode(x!.Value.Code.Code, code));
+
+    /// <summary>Same product code, ignoring non-digits and leading zeros (UPC-A 12 digits = EAN-13 with a leading 0).</summary>
+    public static bool SameCode(string a, string b)
+    {
+        static string N(string c)
+        {
+            var d = new string(c.Where(char.IsDigit).ToArray()).TrimStart('0');
+            return d == "" ? c.Trim() : d;
+        }
+        return N(a) == N(b);
+    }
+
+    /// <summary>Snack whose name (or icon) best matches a product description, e.g. from Open Food Facts.</summary>
+    public Snack? MatchSnack(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return null;
+        var t = text.ToLowerInvariant();
+        var byName = State.Snacks
+            .Select(s => (s, words: s.Name.ToLowerInvariant().Split([' ', '(', ')', '-', ','], StringSplitOptions.RemoveEmptyEntries)
+                .Where(w => w.Length >= 4).ToList()))
+            .Select(x => (x.s, score: x.words.Count(w => t.Contains(w) || t.Contains(w.TrimEnd('s')))))
+            .Where(x => x.score > 0)
+            .OrderByDescending(x => x.score).ThenByDescending(x => x.s.Name.Length)
+            .Select(x => x.s).FirstOrDefault();
+        if (byName is not null) return byName;
+        var icon = SnackIcons.Guess(t);
+        return icon == "" ? null : State.Snacks.FirstOrDefault(s => SnackIcons.Guess(s.Name) == icon || s.Icon == icon);
+    }
+
+    /// <summary>Number of pieces in a pack from a product text like "10 stuks", "10 x 70 g", "8st"; 0 if unknown.</summary>
+    public static int GuessPack(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return 0;
+        var t = text.ToLowerInvariant();
+        foreach (var pattern in new[] { @"(\d{1,3})\s*(?:stuks|stuk|st\b|pcs|pieces|x\s*\d)", @"(\d{1,3})\s*(?:frikandellen|kroketten|snacks|bitterballen|kipcorns)" })
+        {
+            var m = System.Text.RegularExpressions.Regex.Match(t, pattern);
+            if (m.Success && int.TryParse(m.Groups[1].Value, out var n) && n is > 0 and <= 200) return n;
+        }
+        return 0;
+    }
 
     public Order? OrderOf(string person) =>
         State.Orders.FirstOrDefault(o => string.Equals(o.Person, person, StringComparison.OrdinalIgnoreCase));
@@ -259,7 +300,7 @@ public class BarcodeConverter : System.Text.Json.Serialization.JsonConverter<Bar
 {
     public override Barcode? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        return new Barcode { Code = reader.GetString() ?? "", PackSize = 0 };
+        if (reader.TokenType == JsonTokenType.String) return new Barcode { Code = reader.GetString() ?? "", PackSize = 0 };
         using var doc = JsonDocument.ParseValue(ref reader);
         var r = doc.RootElement;
         string Str(string n) => r.TryGetProperty(n, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() ?? "" : "";
