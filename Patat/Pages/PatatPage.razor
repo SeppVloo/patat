@@ -283,8 +283,13 @@
         if (_bakker) await Publish();
     }
 
+    private int _draftRound = -1;
+
     private void LoadDraft()
     {
+        // New round started by the baker: everybody starts again from zero.
+        if (_draftRound != _engine.State.Round) { _draftRound = _engine.State.Round; _draftTouched = false; }
+        if (_pending is not null && _pending.Round != _engine.State.Round) { _pending = null; _ = SavePending(); }
         if (_draftTouched) return;
         var mine = _pending ?? _engine.OrderOf(_name);
         _draft = mine is null ? [] : new(mine.Items);
@@ -302,7 +307,7 @@
 
     private async Task SendOrder()
     {
-        var order = new Order { Person = _name, Items = new(_draft), Note = _note.Trim(), Stamp = Guid.NewGuid().ToString("N") };
+        var order = new Order { Person = _name, Items = new(_draft), Note = _note.Trim(), Stamp = Guid.NewGuid().ToString("N"), Round = _engine.State.Round };
         _draftTouched = false;
         if (_bakker)
         {
@@ -506,6 +511,11 @@
         // Every device keeps the latest state of its family, so any device can take over as baker.
         await JsVoid(_js, "save", StateKey, json);
         _hasState = true;
+        if (_pending is not null && _pending.Round != _engine.State.Round)
+        {
+            _pending = null;
+            await SavePending();
+        }
         if (_pending is not null)
         {
             if (_engine.State.Rejected.TryGetValue(_pending.Stamp, out var why))

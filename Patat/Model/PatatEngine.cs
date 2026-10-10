@@ -44,6 +44,8 @@ public class Order
     public string Note { get; set; } = "";
     /// <summary>Unique per submit, so a client can see its latest version has arrived.</summary>
     public string Stamp { get; set; } = "";
+    /// <summary>Round in which the order was made.</summary>
+    public int Round { get; set; }
     public DateTime Time { get; set; } = DateTime.UtcNow;
 }
 
@@ -67,6 +69,8 @@ public class PatatState
     /// <summary>Incremented on every change by the baker; the highest version wins when devices meet.</summary>
     public long Version { get; set; }
     public bool Open { get; set; } = true;
+    /// <summary>Round number, increased when the baker finishes a round; orders of an older round are ignored.</summary>
+    public int Round { get; set; }
     /// <summary>Announce the family code on the baker's wifi network so new devices there can join.</summary>
     public bool WifiJoin { get; set; } = true;
     public List<Snack> Snacks { get; set; } = [];
@@ -220,6 +224,7 @@ public class PatatEngine
     public string? PlaceOrder(Order order)
     {
         if (!State.Open) return "De bestellingen zijn gesloten.";
+        if (order.Round != State.Round) return "Die bestelling hoorde bij een vorige ronde; bestel opnieuw.";
         order.Person = order.Person.Trim();
         if (order.Person.Length == 0) return "Vul je naam in.";
         order.Items = order.Items.Where(kv => kv.Value > 0 && Find(kv.Key) is not null).ToDictionary();
@@ -259,6 +264,7 @@ public class PatatEngine
         State.Orders.Clear();
         State.Batches.Clear();
         State.Rejected.Clear();
+        State.Round++;
     }
 
     public Dictionary<string, int> Totals()

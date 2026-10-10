@@ -88,3 +88,5 @@ in `patat.js` hersteld.
 - Gezinscode wijzigen door de bakker (met voorraad meeverhuizen) sluit de oude gezinscode: de oude familie wordt gewist en gemarkeerd als gesloten. Apparaten met de oude code stoppen en vragen om de nieuwe code; de nieuwe code wordt nergens getoond (de gezinscode werkt als wachtwoord). Gesloten families worden niet opnieuw aangemaakt.
 
 - Opstartfouten (bijv. op oudere iPads) worden in beeld getoond in plaats van een hangende laadcirkel, inclusief browserversie; na 30 s zonder start verschijnt ook een melding.
+
+- Rondenummer: bij 'Nieuwe ronde' verhoogt de bakker State.Round. Bestellingen dragen het rondenummer; bestellingen uit een vorige ronde (bijv. nog niet bevestigd op een apparaat) worden niet meer verstuurd of geaccepteerd, en ieders bestelformulier begint weer op 0.
