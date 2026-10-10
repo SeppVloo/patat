@@ -90,3 +90,5 @@ in `patat.js` hersteld.
 - Opstartfouten (bijv. op oudere iPads) worden in beeld getoond in plaats van een hangende laadcirkel, inclusief browserversie; na 30 s zonder start verschijnt ook een melding.
 
 - Rondenummer: bij 'Nieuwe ronde' verhoogt de bakker State.Round. Bestellingen dragen het rondenummer; bestellingen uit een vorige ronde (bijv. nog niet bevestigd op een apparaat) worden niet meer verstuurd of geaccepteerd, en ieders bestelformulier begint weer op 0.
+
+- Info-popup: er staat er altijd maximaal één open (andere sluiten automatisch, tik op de popup sluit hem). Voor eerder gekoppelde codes zonder foto/Nutri-Score wordt die info bij het tonen opgehaald bij Open Food Facts (alleen lokaal, niet opgeslagen).

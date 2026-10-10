@@ -1,8 +1,10 @@
-@* Product info for a snack: shown on hover (desktop) or by tapping the i-button (phone/tablet). *@
+@* Product info for a snack: shown on hover (desktop) or by tapping the i-button (phone/tablet). Only one is open at a time. *@
+@implements IDisposable
+@inject IJSRuntime JS
 @if (Codes.Count > 0)
 {
-    <button type="button" class="pt-info-btn" title="Meer informatie" @onclick="() => _open = !_open">i</button>
-    <div class="pt-info-pop @(_open ? "open" : "")" @onclick="() => _open = false">
+    <button type="button" class="pt-info-btn" title="Meer informatie" @onclick="Toggle">i</button>
+    <div class="pt-info-pop @(Open ? "open" : "")" @onclick="Close">
         <b>@Snack.Name</b>
         @foreach (var b in Codes)
         {
@@ -26,11 +28,50 @@
 
 @code {
     [Parameter, EditorRequired] public Snack Snack { get; set; } = default!;
-    private bool _open;
+
+    private static SnackInfo? _current;
+    private static event Action? CurrentChanged;
+    private static readonly HashSet<string> Fetched = [];
+    private bool Open => ReferenceEquals(_current, this);
+
+    protected override void OnInitialized() => CurrentChanged += Refresh;
+    protected override async Task OnAfterRenderAsync(bool firstRender) { if (firstRender) await Fill(); }
+    public void Dispose() { CurrentChanged -= Refresh; if (Open) _current = null; }
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    private async Task Toggle()
+    {
+        _current = Open ? null : this;
+        CurrentChanged?.Invoke();
+        if (Open) await Fill();
+    }
+
+    private void Close() { if (Open) { _current = null; CurrentChanged?.Invoke(); } }
 
     private List<Barcode> Codes => Snack.Barcodes
         .Where(b => b.Label != "" || b.Image != "" || b.Kcal > 0)
         .GroupBy(b => b.Label).Select(g => g.First()).Take(4).ToList();
+
+    /// <summary>Codes linked before photos/Nutri-Score were stored: look them up once (only shown locally).</summary>
+    private async Task Fill()
+    {
+        foreach (var b in Codes.Where(b => b.Image == "" && b.Nutri == "" && Fetched.Add(b.Code)))
+        {
+            try
+            {
+                await using var m = await JS.InvokeAsync<IJSObjectReference>("import", "./patat-scan.js");
+                var json = await m.InvokeAsync<string>("lookup", b.Code);
+                using var doc = System.Text.Json.JsonDocument.Parse(string.IsNullOrEmpty(json) ? "{}" : json);
+                string Get(string n) => doc.RootElement.TryGetProperty(n, out var v) && v.ValueKind == System.Text.Json.JsonValueKind.String ? v.GetString() ?? "" : "";
+                b.Image = Get("image");
+                b.Nutri = Get("nutri");
+                if (b.Qty == "") b.Qty = Get("qty");
+                if (b.Kcal == 0 && doc.RootElement.TryGetProperty("kcal", out var k) && k.TryGetInt32(out var kv)) b.Kcal = kv;
+                StateHasChanged();
+            }
+            catch (Exception ex) when (ex is JSException or System.Text.Json.JsonException) { }
+        }
+    }
 
     private static string Details(Barcode b) => string.Join(" \u00B7 ", new[]
     {
