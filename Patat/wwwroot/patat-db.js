@@ -83,6 +83,16 @@ export async function start(ref, code, host, name) {
     try {
         await ensure();
         const id = await familyId(code);
+        // The baker moved this family to a new code: follow it instead of (re)creating the old family.
+        const moved = (await fb.get(fb.ref(db, `families/${id}/movedTo`))).val();
+        if (typeof moved === "string" && moved && moved.toLowerCase() !== code.trim().toLowerCase()) {
+            call("OnDbMoved", moved);
+            return false;
+        }
+        unsubs.push(fb.onValue(fb.ref(db, `families/${id}/movedTo`), snap => {
+            const to = snap.val();
+            if (typeof to === "string" && to && to.toLowerCase() !== code.trim().toLowerCase()) call("OnDbMoved", to);
+        }));
         stateRef = fb.ref(db, `families/${id}/state`);
         inboxRef = fb.ref(db, `families/${id}/inbox`);
         unsubs.push(fb.onValue(stateRef, snap => call("OnDbState", snap.val() ?? "")));
@@ -110,7 +120,19 @@ export function stop() {
     unsubs = []; stateRef = inboxRef = null;
 }
 
-export async function save(json) { if (stateRef) await fb.set(stateRef, json); }
+// Baker changed the family code: leave a pointer at the old family so every device follows,
+// and (when the stock moved along) remove the old state and inbox.
+export async function moveFamily(oldCode, newCode, dropOld) {
+    if (!enabled() || !oldCode || !newCode) return;
+    try {
+        await ensure();
+        const id = await familyId(oldCode);
+        if (dropOld) await fb.update(fb.ref(db, `families/${id}`), { state: null, inbox: null, presence: null });
+        await fb.set(fb.ref(db, `families/${id}/movedTo`), newCode.trim());
+    } catch (e) { console.warn("Verhuizen mislukt", e); }
+}
+
+export async function save(json) {
 export async function order(json) { if (inboxRef) await fb.push(inboxRef, { type: "order", json }); }
 export async function cancel(person) { if (inboxRef) await fb.push(inboxRef, { type: "cancel", person }); }
 export async function done(key) { if (inboxRef) await fb.remove(fb.child(inboxRef, key)); }

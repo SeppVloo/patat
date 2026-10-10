@@ -264,6 +264,10 @@
         var move = _moveStock && _bakker && _bakkerInput && !string.Equals(_codeInput.Trim(), _code, StringComparison.OrdinalIgnoreCase)
             ? _engine.ToJson() : null;
         _moveStock = false;
+        var oldCode = _code;
+        if (_bakker && _bakkerInput && !string.IsNullOrWhiteSpace(oldCode) && !string.IsNullOrWhiteSpace(_codeInput)
+            && !string.Equals(_codeInput.Trim(), oldCode, StringComparison.OrdinalIgnoreCase))
+            await JsVoid(_db, "moveFamily", oldCode, _codeInput.Trim(), move is not null);
         (_name, _code, _bakker) = (_nameInput.Trim(), _codeInput.Trim(), _bakkerInput);
         if (move is not null)
         {
@@ -440,6 +444,21 @@
             // Database empty or older than this device: upload our state (also migrates existing local stock).
             await Publish();
         }
+    }
+
+    /// <summary>The baker moved the family to a new code: switch this device over automatically.</summary>
+    [JSInvokable]
+    public async Task OnDbMoved(string code)
+    {
+        code = code.Trim();
+        if (code == "" || string.Equals(code, _code, StringComparison.OrdinalIgnoreCase)) return;
+        var old = _code;
+        _code = _codeInput = code;
+        await JsVoid(_js, "save", KeyCode, _code);
+        if (_bakker) await LoadState();
+        await Connect();
+        Show($"De snackbakker heeft de gezinscode veranderd van {old} naar {code}; je bent automatisch overgezet.");
+        StateHasChanged();
     }
 
     [JSInvokable]

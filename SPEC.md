@@ -84,3 +84,5 @@ in `patat.js` hersteld.
 
 - Scanner haalt meer productinfo op (Open Food Facts): stuks per pak uit aantal eenheden, '10 x 70 g', 'stuks' of totaalgewicht/portiegewicht; verpakkingstekst wordt getoond ter controle. Per code worden foto, kcal per stuk, Nutri-Score en verpakkingstekst opgeslagen.
 - Bestellen: hover (of tik op ℹ) bij een snack toont productinfo per merk.
+
+- Gezinscode wijzigen door de bakker geldt overal: bij de oude familie wordt movedTo=<nieuwe code> gezet (en bij verhuizen van de voorraad worden oude state/inbox/presence gewist). Elk apparaat dat de oude code opent of nog open heeft, schakelt automatisch over naar de nieuwe code en maakt de oude familie niet opnieuw aan.
