@@ -203,11 +203,11 @@ body.pt-alarm { animation: pt-alarm 1s steps(1) infinite; }
 /* Snack info popover */
 .pt-snack { position: relative; }
 .pt-emoji { position: relative; }
-.pt-info-btn { position: absolute; right: -6px; bottom: -6px; width: 18px; height: 18px; padding: 0; border-radius: 50%; border: 1px solid var(--pt-border); background: var(--pt-surface); color: var(--pt-muted); font-size: 11px; line-height: 16px; cursor: pointer; }
-.pt-info-pop { display: none; position: absolute; left: 0; top: calc(100% + 6px); z-index: 20; width: min(300px, 80vw); padding: 10px; border: 1px solid var(--pt-border); border-radius: 12px; background: var(--pt-surface); box-shadow: 0 8px 24px rgba(0,0,0,.18); text-align: left; font-size: .9rem; }
-.pt-info-pop.open { display: grid; gap: 8px; }
-@media (hover: hover) { .pt-snack:hover .pt-info-pop { display: grid; gap: 8px; } }
-.pt-info-item { display: flex; gap: 8px; align-items: flex-start; }
-.pt-info-item img { width: 48px; height: 48px; object-fit: contain; border-radius: 6px; background: #fff; }
-.pt-nutri { display: inline-block; margin-top: 2px; padding: 1px 6px; border-radius: 6px; font-size: .75rem; font-weight: bold; color: #fff; }
+.pt-info-btn { position: absolute; right: -8px; bottom: -8px; width: 26px; height: 26px; padding: 0; border-radius: 50%; border: 1px solid var(--pt-border); background: var(--pt-surface); color: var(--pt-muted); font-size: 15px; font-weight: bold; line-height: 24px; cursor: pointer; }
+.pt-info-pop { display: none; position: absolute; left: 0; top: calc(100% + 6px); z-index: 20; width: min(420px, 92vw); padding: 14px; border: 1px solid var(--pt-border); border-radius: 14px; background: var(--pt-surface); box-shadow: 0 8px 24px rgba(0,0,0,.18); text-align: left; font-size: 1.1rem; line-height: 1.4; }
+.pt-info-pop.open { display: grid; gap: 12px; }
+@media (hover: hover) { .pt-snack:hover .pt-info-pop { display: grid; gap: 12px; } }
+.pt-info-item { display: flex; gap: 12px; align-items: flex-start; } .pt-info-item small { font-size: .95rem; }
+.pt-info-item img { width: 96px; height: 96px; flex: none; object-fit: contain; border-radius: 8px; background: #fff; }
+.pt-nutri { display: inline-block; margin-top: 4px; padding: 3px 10px; border-radius: 8px; font-size: 1rem; font-weight: bold; color: #fff; }
 .pt-nutri.na { background: #038141; } .pt-nutri.nb { background: #85bb2f; } .pt-nutri.nc { background: #e6a700; } .pt-nutri.nd { background: #ee8100; } .pt-nutri.ne { background: #e63e11; }

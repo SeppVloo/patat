@@ -98,3 +98,5 @@ in `patat.js` hersteld.
 - Snackbakker hoort bij de gezinscode: iedereen met de code kan bakker worden en krijgt de voorraad, codes en geschiedenis van die code. Een apparaat zonder eigen kopie publiceert bij het bakker worden niet meer de standaardlijst, maar wacht op de cloud/andere apparaten (geen dataverlies).
 
 - Bestellen live: elke +/- wordt na 0,7 s automatisch doorgegeven (ook naar 0 = annuleren), zodat bij iedereen de voorraad direct afneemt. *Bestelling doorgeven* blijft als expliciete bevestiging.
+
+- Info-popup groter (tekst ~1.1rem, foto 96px, grotere i-knop en Nutri-Score) voor telefoon en laptop.
