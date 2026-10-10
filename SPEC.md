@@ -96,3 +96,5 @@ in `patat.js` hersteld.
 - Ondersteuning iPad/Safari 16: de gepubliceerde versie wordt gebouwd zonder WASM exception handling (wasm-tools workload in de deploy-workflow).
 
 - Snackbakker hoort bij de gezinscode: iedereen met de code kan bakker worden en krijgt de voorraad, codes en geschiedenis van die code. Een apparaat zonder eigen kopie publiceert bij het bakker worden niet meer de standaardlijst, maar wacht op de cloud/andere apparaten (geen dataverlies).
+
+- Bestellen live: elke +/- wordt na 0,7 s automatisch doorgegeven (ook naar 0 = annuleren), zodat bij iedereen de voorraad direct afneemt. *Bestelling doorgeven* blijft als expliciete bevestiging.
