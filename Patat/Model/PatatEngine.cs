@@ -27,6 +27,14 @@ public class Barcode
     public int PackSize { get; set; } = 1;
     /// <summary>Optional brand/product name, e.g. from Open Food Facts.</summary>
     public string Label { get; set; } = "";
+    /// <summary>Product photo URL (Open Food Facts).</summary>
+    public string Image { get; set; } = "";
+    /// <summary>Calories per piece; 0 = unknown.</summary>
+    public int Kcal { get; set; }
+    /// <summary>Nutri-Score A-E; empty = unknown.</summary>
+    public string Nutri { get; set; } = "";
+    /// <summary>Package contents as printed, e.g. "10 x 70 g".</summary>
+    public string Qty { get; set; } = "";
 }
 
 public class Order
@@ -307,7 +315,8 @@ public class BarcodeConverter : System.Text.Json.Serialization.JsonConverter<Bar
         var r = doc.RootElement;
         string Str(string n) => r.TryGetProperty(n, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() ?? "" : "";
         var pack = r.TryGetProperty("packSize", out var p) && p.TryGetInt32(out var n) ? n : 1;
-        return new Barcode { Code = Str("code"), Label = Str("label"), PackSize = Math.Max(1, pack) };
+        var kcal = r.TryGetProperty("kcal", out var k) && k.TryGetInt32(out var kv) ? kv : 0;
+        return new Barcode { Code = Str("code"), Label = Str("label"), PackSize = Math.Max(1, pack), Image = Str("image"), Kcal = kcal, Nutri = Str("nutri"), Qty = Str("qty") };
     }
 
     public override void Write(Utf8JsonWriter writer, Barcode value, JsonSerializerOptions options)
@@ -316,6 +325,10 @@ public class BarcodeConverter : System.Text.Json.Serialization.JsonConverter<Bar
         writer.WriteString("code", value.Code);
         writer.WriteNumber("packSize", value.PackSize);
         writer.WriteString("label", value.Label);
+        if (value.Image != "") writer.WriteString("image", value.Image);
+        if (value.Kcal > 0) writer.WriteNumber("kcal", value.Kcal);
+        if (value.Nutri != "") writer.WriteString("nutri", value.Nutri);
+        if (value.Qty != "") writer.WriteString("qty", value.Qty);
         writer.WriteEndObject();
     }
 }

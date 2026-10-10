@@ -62,7 +62,7 @@ export function stop() {
 // (names, generic name, categories, quantity). Empty object when the product is unknown.
 export async function lookup(code) {
     try {
-        const fields = "product_name_nl,product_name,generic_name_nl,generic_name,brands,categories,quantity,product_quantity_unit";
+        const fields = "product_name_nl,product_name,generic_name_nl,generic_name,brands,categories,quantity,product_quantity,serving_size,serving_quantity,number_of_units,nutriments,nutriscore_grade,image_front_small_url,image_small_url";
         const r = await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json?fields=${fields}`);
         if (!r.ok) return "{}";
         const p = (await r.json()).product;
@@ -70,7 +70,27 @@ export async function lookup(code) {
         const name = (p.product_name_nl || p.product_name || "").trim();
         const brand = (p.brands || "").split(",")[0].trim();
         const label = brand && name && !name.toLowerCase().includes(brand.toLowerCase()) ? `${brand} ${name}` : name;
-        const text = [p.product_name_nl, p.product_name, p.generic_name_nl, p.generic_name, p.categories, p.quantity].filter(x => x).join(" | ");
-        return JSON.stringify({ label, text });
+        const text = [p.product_name_nl, p.product_name, p.generic_name_nl, p.generic_name, p.categories, p.quantity, p.serving_size].filter(x => x).join(" | ");
+        // Pieces per pack: explicit unit count, "10 x 70 g", "8 stuks", or total weight / portion weight.
+        const total = parseFloat(p.product_quantity) || 0;
+        const serving = parseFloat(p.serving_quantity) || 0;
+        let pieces = parseInt(p.number_of_units) || 0;
+        const m = /(\d{1,3})\s*[x×]\s*\d/i.exec(p.quantity || "") || /(\d{1,3})\s*(?:stuks|stuk|st\b|pcs|pieces)/i.exec(`${p.quantity || ""} ${name}`);
+        if (!pieces && m) pieces = parseInt(m[1]);
+        if (!pieces && total > 0 && serving > 0 && total >= serving) pieces = Math.round(total / serving);
+        if (pieces < 1 || pieces > 200) pieces = 0;
+        const n = p.nutriments || {};
+        let kcal = n["energy-kcal_serving"] || 0;
+        if (!kcal && n["energy-kcal_100g"]) {
+            const per = serving || (pieces && total ? total / pieces : 0);
+            if (per) kcal = n["energy-kcal_100g"] * per / 100;
+        }
+        return JSON.stringify({
+            label, text, pieces,
+            image: p.image_front_small_url || p.image_small_url || "",
+            kcal: Math.round(kcal) || 0,
+            nutri: /^[a-e]$/i.test(p.nutriscore_grade || "") ? p.nutriscore_grade.toUpperCase() : "",
+            qty: p.quantity || ""
+        });
     } catch { return "{}"; }
 }

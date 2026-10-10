@@ -200,3 +200,14 @@ body.pt-alarm { animation: pt-alarm 1s steps(1) infinite; }
 .pt-code-main code { font-size: .8rem; color: var(--pt-muted); letter-spacing: .05em; }
 .pt-code-pack { display: flex; align-items: center; gap: 4px; margin: 0 !important; }
 .pt-code-pack .pt-input.num { width: 4.5rem; text-align: center; }
+/* Snack info popover */
+.pt-snack { position: relative; }
+.pt-emoji { position: relative; }
+.pt-info-btn { position: absolute; right: -6px; bottom: -6px; width: 18px; height: 18px; padding: 0; border-radius: 50%; border: 1px solid var(--pt-border); background: var(--pt-surface); color: var(--pt-muted); font-size: 11px; line-height: 16px; cursor: pointer; }
+.pt-info-pop { display: none; position: absolute; left: 0; top: calc(100% + 6px); z-index: 20; width: min(300px, 80vw); padding: 10px; border: 1px solid var(--pt-border); border-radius: 12px; background: var(--pt-surface); box-shadow: 0 8px 24px rgba(0,0,0,.18); text-align: left; font-size: .9rem; }
+.pt-info-pop.open { display: grid; gap: 8px; }
+@media (hover: hover) { .pt-snack:hover .pt-info-pop { display: grid; gap: 8px; } }
+.pt-info-item { display: flex; gap: 8px; align-items: flex-start; }
+.pt-info-item img { width: 48px; height: 48px; object-fit: contain; border-radius: 6px; background: #fff; }
+.pt-nutri { display: inline-block; margin-top: 2px; padding: 1px 6px; border-radius: 6px; font-size: .75rem; font-weight: bold; color: #fff; }
+.pt-nutri.na { background: #038141; } .pt-nutri.nb { background: #85bb2f; } .pt-nutri.nc { background: #e6a700; } .pt-nutri.nd { background: #ee8100; } .pt-nutri.ne { background: #e63e11; }

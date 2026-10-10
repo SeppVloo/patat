@@ -98,7 +98,10 @@
                         var max = _engine.MaxFor(s.Id, _name);
                         var n = _draft.GetValueOrDefault(s.Id);
                         <div class="pt-snack @(max == 0 ? "empty" : "")">
-                            <span class="pt-emoji"><SnackIcon Snack="s" Size="40" /></span>
+                            <span class="pt-emoji">
+                                <SnackIcon Snack="s" Size="40" />
+                                <SnackInfo Snack="s" />
+                            </span>
                             <span class="pt-name">@s.Name<small>@(max == 0 ? "op" : $"nog {max - n} over")</small></span>
                             <button class="pt-round" @onclick="() => Change(s.Id, -1)" disabled="@(n == 0)">−</button>
                             <b class="pt-count">@n</b>

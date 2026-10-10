@@ -41,6 +41,10 @@
             }
             <label>Merk/omschrijving <input class="pt-input" @bind="_label" maxlength="40" /></label>
             <label>Stuks per pak (deze code) <input class="pt-input num" type="number" min="1" max="200" @bind="_pack" /></label>
+            @if (_info.Qty != "")
+            {
+                <small class="pt-muted">Op de verpakking: @_info.Qty — controleer het aantal.</small>
+            }
             <div class="pt-row">
                 <button class="pt-btn" @onclick="Link" disabled="@(_target == "" && string.IsNullOrWhiteSpace(_newName))">Opslaan en pak toevoegen</button>
                 <button class="pt-btn ghost" @onclick="() => _unknown = null">Overslaan</button>
@@ -160,6 +164,7 @@
             _pack = 1;
             _label = "";
             _newName = "";
+            _info = new();
             Show($"Nieuwe code {code}: kies de snack of maak een nieuwe aan.");
             StateHasChanged();
             try
@@ -176,7 +181,15 @@
                     _target = match.Id;
                     _pack = Math.Max(1, match.PackSize);
                 }
-                if (PatatEngine.GuessPack(all) is > 0 and var n) _pack = n;
+                if (doc.RootElement.TryGetProperty("pieces", out var pc) && pc.TryGetInt32(out var pieces) && pieces > 0) _pack = pieces;
+                else if (PatatEngine.GuessPack(all) is > 0 and var n) _pack = n;
+                _info = new Barcode
+                {
+                    Image = Get("image"),
+                    Nutri = Get("nutri"),
+                    Qty = Get("qty"),
+                    Kcal = doc.RootElement.TryGetProperty("kcal", out var kc) && kc.TryGetInt32(out var kv) ? kv : 0
+                };
                 Show(_label == ""
                     ? $"Nieuwe code {code}: onbekend product, kies de snack."
                     : match is null ? $"Nieuwe code: {_label}. Kies de snack." : $"Nieuwe code: {_label}. Herkend als {match.Name}, klopt dat?");
@@ -196,7 +209,7 @@
             s = new Snack { Name = _newName.Trim(), PackSize = Math.Max(1, _pack) };
             Engine.State.Snacks.Add(s);
         }
-        var b = new Barcode { Code = _unknown, PackSize = Math.Max(1, _pack), Label = _label.Trim() };
+        var b = new Barcode { Code = _unknown, PackSize = Math.Max(1, _pack), Label = _label.Trim(), Image = _info.Image, Kcal = _info.Kcal, Nutri = _info.Nutri, Qty = _info.Qty };
         s.Barcodes.Add(b);
         s.Stock += b.PackSize;
         Show($"✅ Code gekoppeld aan {s.Name}: +{b.PackSize} (nu {s.Stock})");
@@ -204,6 +217,7 @@
         await Changed();
     }
 
+    private Barcode _info = new();
     private string _filter = "";
 
     private IEnumerable<Snack> CodeSnacks() =>
