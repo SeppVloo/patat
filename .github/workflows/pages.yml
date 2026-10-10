@@ -24,8 +24,12 @@ jobs:
         with:
           global-json-file: global.json
 
+      # Safari/iPadOS 16 does not support WASM exception handling: build the runtime without it.
+      - name: Install wasm-tools
+        run: dotnet workload install wasm-tools
+
       - name: Publish
-        run: dotnet publish Patat/Patat.csproj -c Release -o out
+        run: dotnet publish Patat/Patat.csproj -c Release -o out -p:WasmEnableExceptionHandling=false -p:WasmBuildNative=true
 
       # GitHub Pages serves the site from /<repo-name>/, unless a custom domain (CNAME) is used: then from /.
       - name: Set base href

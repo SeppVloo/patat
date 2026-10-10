@@ -92,3 +92,5 @@ in `patat.js` hersteld.
 - Rondenummer: bij 'Nieuwe ronde' verhoogt de bakker State.Round. Bestellingen dragen het rondenummer; bestellingen uit een vorige ronde (bijv. nog niet bevestigd op een apparaat) worden niet meer verstuurd of geaccepteerd, en ieders bestelformulier begint weer op 0.
 
 - Info-popup: er staat er altijd maximaal één open (andere sluiten automatisch, tik op de popup sluit hem). Voor eerder gekoppelde codes zonder foto/Nutri-Score wordt die info bij het tonen opgehaald bij Open Food Facts (alleen lokaal, niet opgeslagen).
+
+- Ondersteuning iPad/Safari 16: de gepubliceerde versie wordt gebouwd zonder WASM exception handling (wasm-tools workload in de deploy-workflow).
