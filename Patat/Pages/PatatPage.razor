@@ -111,7 +111,7 @@
                 </div>
                 <label>Opmerking (saus, extra zout…) <input class="pt-input" @bind="_note" maxlength="80" /></label>
                 <div class="pt-row">
-                    <button class="pt-btn big" @onclick="SendOrder" disabled="@(!_engine.State.Open || _draft.Values.Sum() == 0)">✅ Bestelling doorgeven</button>
+                    <button class="pt-btn big" @onclick="() => SendOrder()" disabled="@(!_engine.State.Open || _draft.Values.Sum() == 0)">✅ Bestelling doorgeven</button>
                     @if (_engine.OrderOf(_name) is not null)
                     {
                         <button class="pt-btn ghost" @onclick="CancelOrder">Annuleren</button>
@@ -304,18 +304,34 @@
         _draftTouched = true;
         var n = Math.Clamp(_draft.GetValueOrDefault(id) + delta, 0, _engine.MaxFor(id, _name));
         if (n == 0) _draft.Remove(id); else _draft[id] = n;
+        _ = AutoSend();
+    }
+
+    private CancellationTokenSource? _autoSend;
+
+    /// <summary>Pass each +/- on to the baker shortly after clicking, so everybody sees the stock go down right away.</summary>
+    private async Task AutoSend()
+    {
+        _autoSend?.Cancel();
+        var cts = _autoSend = new CancellationTokenSource();
+        try { await Task.Delay(700, cts.Token); } catch (TaskCanceledException) { return; }
+        if (!_engine.State.Open) return;
+        if (_draft.Values.Sum() > 0) await SendOrder(silent: true);
+        else if (_engine.OrderOf(_name) is not null || _pending is not null) await Withdraw();
+        StateHasChanged();
     }
 
     private void Show(string? msg, bool error = false) => (_msg, _msgError) = (msg, error);
 
-    private async Task SendOrder()
+    private async Task SendOrder(bool silent = false)
     {
+        _autoSend?.Cancel();
         var order = new Order { Person = _name, Items = new(_draft), Note = _note.Trim(), Stamp = Guid.NewGuid().ToString("N"), Round = _engine.State.Round };
         _draftTouched = false;
         if (_bakker)
         {
             var err = _engine.PlaceOrder(order);
-            Show(err ?? "👍 Bestelling staat erin!", err is not null);
+            if (!silent || err is not null) Show(err ?? "👍 Bestelling staat erin!", err is not null);
             await Publish();
             return;
         }
@@ -331,6 +347,12 @@
         if (!await JsGet<bool>(JS, "confirm", "Je bestelling annuleren?")) return;
         _draft.Clear();
         _note = "";
+        await Withdraw();
+    }
+
+    private async Task Withdraw()
+    {
+        _autoSend?.Cancel();
         _draftTouched = false;
         if (_bakker)
         {
