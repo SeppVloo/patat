@@ -1,0 +1,39 @@
+@* Product info for a snack: shown on hover (desktop) or by tapping the i-button (phone/tablet). *@
+@if (Codes.Count > 0)
+{
+    <button type="button" class="pt-info-btn" title="Meer informatie" @onclick="() => _open = !_open">i</button>
+    <div class="pt-info-pop @(_open ? "open" : "")" @onclick="() => _open = false">
+        <b>@Snack.Name</b>
+        @foreach (var b in Codes)
+        {
+            <div class="pt-info-item">
+                @if (b.Image != "")
+                {
+                    <img src="@b.Image" alt="" loading="lazy" referrerpolicy="no-referrer" />
+                }
+                <div>
+                    <div>@(b.Label == "" ? "Onbekend merk" : b.Label)</div>
+                    <small class="pt-muted">@Details(b)</small>
+                    @if (b.Nutri != "")
+                    {
+                        <span class="pt-nutri n@(b.Nutri.ToLowerInvariant())">Nutri-Score @b.Nutri</span>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public Snack Snack { get; set; } = default!;
+    private bool _open;
+
+    private List<Barcode> Codes => Snack.Barcodes
+        .Where(b => b.Label != "" || b.Image != "" || b.Kcal > 0)
+        .GroupBy(b => b.Label).Select(g => g.First()).Take(4).ToList();
+
+    private static string Details(Barcode b) => string.Join(" \u00B7 ", new[]
+    {
+        $"{b.PackSize} st. per pak", b.Qty, b.Kcal > 0 ? $"\u00B1{b.Kcal} kcal per stuk" : ""
+    }.Where(x => x != ""));
+}
