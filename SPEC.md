@@ -94,3 +94,5 @@ in `patat.js` hersteld.
 - Info-popup: er staat er altijd maximaal één open (andere sluiten automatisch, tik op de popup sluit hem). Voor eerder gekoppelde codes zonder foto/Nutri-Score wordt die info bij het tonen opgehaald bij Open Food Facts (alleen lokaal, niet opgeslagen).
 
 - Ondersteuning iPad/Safari 16: de gepubliceerde versie wordt gebouwd zonder WASM exception handling (wasm-tools workload in de deploy-workflow).
+
+- Snackbakker hoort bij de gezinscode: iedereen met de code kan bakker worden en krijgt de voorraad, codes en geschiedenis van die code. Een apparaat zonder eigen kopie publiceert bij het bakker worden niet meer de standaardlijst, maar wacht op de cloud/andere apparaten (geen dataverlies).

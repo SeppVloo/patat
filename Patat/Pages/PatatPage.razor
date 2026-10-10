@@ -25,7 +25,7 @@
             <h2>Wie ben jij?</h2>
             <label>Je naam <input class="pt-input" @bind="_nameInput" placeholder="bijv. Sepp" maxlength="20" /></label>
             <label>Gezinscode <input class="pt-input" @bind="_codeInput" placeholder="zelfde code voor iedereen" maxlength="30" /></label>
-			<label class="pt-check"><input type="checkbox" @bind="_bakkerInput" /> Ik ben de snackbakker (dit apparaat bewaart voorraad en bestellingen)</label>
+			<label class="pt-check"><input type="checkbox" @bind="_bakkerInput" /> Ik ben de snackbakker (beheert de voorraad en bestellingen van deze gezinscode)</label>
 			@if (!string.IsNullOrEmpty(_lanCode) && !string.Equals(_lanCode, _codeInput.Trim(), StringComparison.OrdinalIgnoreCase))
 			{
 				<button class="pt-btn ghost" @onclick="() => _codeInput = _lanCode!">ðŸ“¶ Gezin op dit wifi-netwerk gevonden: gebruik code <b>@_lanCode</b></button>
@@ -280,8 +280,11 @@
         if (reconnect) await Connect();
         _draftTouched = false;
         LoadDraft();
-        if (_bakker) await Publish();
+        // A device without a copy of this family's stock must not spread the default list: wait for the cloud/peers.
+        if (_bakker && _hasLocalState) await Publish();
     }
+
+    private bool _hasLocalState;
 
     private int _draftRound = -1;
 
@@ -364,6 +367,7 @@
         // State is stored per family code; fall back to the old device-wide key (before per-code storage).
         var json = await JsGet<string?>(_js, "load", StateKey);
         if (string.IsNullOrWhiteSpace(json)) json = await JsGet<string?>(_js, "load", KeyState);
+        _hasLocalState = !string.IsNullOrWhiteSpace(json);
         if (!_engine.Load(json))
         {
             // Keep the unreadable state safe instead of overwriting it with the default list.
