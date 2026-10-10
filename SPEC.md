@@ -86,3 +86,5 @@ in `patat.js` hersteld.
 - Bestellen: hover (of tik op ℹ) bij een snack toont productinfo per merk.
 
 - Gezinscode wijzigen door de bakker (met voorraad meeverhuizen) sluit de oude gezinscode: de oude familie wordt gewist en gemarkeerd als gesloten. Apparaten met de oude code stoppen en vragen om de nieuwe code; de nieuwe code wordt nergens getoond (de gezinscode werkt als wachtwoord). Gesloten families worden niet opnieuw aangemaakt.
+
+- Opstartfouten (bijv. op oudere iPads) worden in beeld getoond in plaats van een hangende laadcirkel, inclusief browserversie; na 30 s zonder start verschijnt ook een melding.
