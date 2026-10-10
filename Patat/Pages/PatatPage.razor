@@ -265,9 +265,7 @@
             ? _engine.ToJson() : null;
         _moveStock = false;
         var oldCode = _code;
-        if (_bakker && _bakkerInput && !string.IsNullOrWhiteSpace(oldCode) && !string.IsNullOrWhiteSpace(_codeInput)
-            && !string.Equals(_codeInput.Trim(), oldCode, StringComparison.OrdinalIgnoreCase))
-            await JsVoid(_db, "moveFamily", oldCode, _codeInput.Trim(), move is not null);
+        if (move is not null) await JsVoid(_db, "closeFamily", oldCode);
         (_name, _code, _bakker) = (_nameInput.Trim(), _codeInput.Trim(), _bakkerInput);
         if (move is not null)
         {
@@ -446,18 +444,17 @@
         }
     }
 
-    /// <summary>The baker moved the family to a new code: switch this device over automatically.</summary>
+    /// <summary>The baker changed the family code: this code is closed. Ask for the new one (it is not revealed).</summary>
     [JSInvokable]
-    public async Task OnDbMoved(string code)
+    public async Task OnDbClosed()
     {
-        code = code.Trim();
-        if (code == "" || string.Equals(code, _code, StringComparison.OrdinalIgnoreCase)) return;
-        var old = _code;
-        _code = _codeInput = code;
-        await JsVoid(_js, "save", KeyCode, _code);
-        if (_bakker) await LoadState();
-        await Connect();
-        Show($"De snackbakker heeft de gezinscode veranderd van {old} naar {code}; je bent automatisch overgezet.");
+        await JsVoid(_js, "leave");
+        _code = _codeInput = "";
+        _hasState = _dbOn = false;
+        _online = [];
+        await JsVoid(_js, "save", KeyCode, null);
+        _editSetup = true;
+        Show("De snackbakker heeft de gezinscode veranderd. Vraag de nieuwe code en vul die hieronder in.", true);
         StateHasChanged();
     }
 
