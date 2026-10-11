@@ -38,10 +38,16 @@ async function onActivate(event) {
     await self.clients.claim();
 }
 
-// Network first so a new deploy is always picked up; the cache is only an offline fallback.
+// App files from the manifest come straight from the cache (instant start; a new deploy brings a new cache).
+// Pages and the rest: network first, so a new deploy is always picked up; the cache is the offline fallback.
 async function onFetch(event) {
+    const req = event.request;
+    if (req.method === 'GET' && req.mode !== 'navigate' && manifestUrlList.includes(req.url) && !/\.html$|service-worker/.test(req.url)) {
+        const hit = await (await caches.open(cacheName)).match(req);
+        if (hit) return hit;
+    }
     try {
-        return await fetch(event.request);
+        return await fetch(req);
     } catch {
         if (event.request.method !== 'GET') throw new Error('offline');
         const shouldServeIndexHtml = event.request.mode === 'navigate'

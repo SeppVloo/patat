@@ -77,10 +77,10 @@
         {
             <VoorraadView Engine="_engine" Changed="Edit" />
         }
-        else if (!_bakker && !_hasState)
+        else if (!_bakker && !_hasState && !_hasLocalState)
         {
             <div class="pt-card">
-                <h2>⏳ Verbinden…</h2>
+                <h2><span class="pt-spin">⏳</span> Verbinden…</h2>
                 <p class="pt-muted">De voorraad van gezinscode <b>@_code</b> wordt opgehaald. Lukt dat niet, controleer dan je internetverbinding.</p>
             </div>
         }
@@ -97,18 +97,22 @@
                     {
                         var max = _engine.MaxFor(s.Id, _name);
                         var n = _draft.GetValueOrDefault(s.Id);
-                        <div class="pt-snack @(max == 0 ? "empty" : "")">
+                        <div class="pt-snack @(max == 0 ? "empty" : max - n <= 2 ? "low" : "")">
                             <span class="pt-emoji">
                                 <SnackIcon Snack="s" Size="40" />
                                 <SnackInfo Snack="s" />
                             </span>
                             <span class="pt-name">@s.Name<small>@(max == 0 ? "op" : $"nog {max - n} over")</small></span>
                             <button class="pt-round" @onclick="() => Change(s.Id, -1)" disabled="@(n == 0)">−</button>
-                            <b class="pt-count">@n</b>
+                            <b class="pt-count" @key="(s.Id + n)">@n</b>
                             <button class="pt-round" @onclick="() => Change(s.Id, 1)" disabled="@(n >= max || !_engine.State.Open)">+</button>
                         </div>
                     }
                 </div>
+                @if (_draft.Values.Sum() == 0 && LastOrder() is { } last && _engine.State.Open)
+                {
+                    <button class="pt-btn ghost" @onclick="() => Repeat(last)">🔁 Zelfde als vorige keer: @Describe(last)</button>
+                }
                 <label>Opmerking (saus, extra zout…) <input class="pt-input" @bind="_note" maxlength="80" /></label>
                 <div class="pt-row">
                     <button class="pt-btn big" @onclick="() => SendOrder()" disabled="@(!_engine.State.Open || _draft.Values.Sum() == 0)">✅ Bestelling doorgeven</button>
@@ -124,6 +128,11 @@
                 else if (_engine.OrderOf(_name) is { } mine)
                 {
                     <p class="pt-ok">👍 De snackbakker heeft je bestelling: @Describe(mine)</p>
+                    @switch (FryStatus(mine))
+                    {
+                        case "ready": <p class="pt-fry ready">🎉 Je eten is klaar!</p> break;
+                        case "busy": <p class="pt-fry">🔥 Je eten ligt in de frituur…</p> break;
+                    }
                 }
             </div>
             <Help />
@@ -197,16 +206,54 @@
     private bool Connected => _bakker || _hasState;
     private string StatusText => (_dbOn ? "☁ " : "") + (_bakker ? $"👨‍🍳 Bakker · {_peers} verbonden" : _hasState ? "🟢 Verbonden" : string.IsNullOrWhiteSpace(_code) ? "⚪ Nog geen gezinscode" : "🔴 Niet verbonden");
 
+    private Order? LastOrder() =>
+        _engine.OrderOf(_name) is null ? _engine.State.History.LastOrDefault(r => r.Orders.Any(o => o.Person == _name))?.Orders.Last(o => o.Person == _name) : null;
+
+    private void Repeat(Order last)
+    {
+        foreach (var (id, count) in last.Items)
+        {
+            var n = Math.Min(count, _engine.MaxFor(id, _name));
+            if (n > 0) _draft[id] = n;
+        }
+        _note = last.Note;
+        if (_draft.Count < last.Items.Count) Show("⚠ Niet alles is nog op voorraad; de rest staat erin.", true);
+        _draftTouched = true;
+        _ = AutoSend();
+    }
+
+    /// <summary>Where the own order is in the fryer: "busy", "ready" or "" (not started).</summary>
+    private string FryStatus(Order mine)
+    {
+        var keys = mine.Items.Keys.Select(_engine.Find).OfType<Snack>().Select(PatatEngine.GroupKey).Distinct().ToList();
+        var batches = keys.Select(k => _engine.State.Batches.FirstOrDefault(b => b.Key == k)).ToList();
+        if (keys.Count > 0 && batches.All(b => b?.Done == true)) return "ready";
+        return batches.Any(b => b?.StartedUtc is not null || b?.Done == true) ? "busy" : "";
+    }
+
+    private string _lastFry = "";
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender) return;
+        if (!firstRender)
+        {
+            var fry = !_bakker && _engine.OrderOf(_name) is { } mine ? FryStatus(mine) : "";
+            if (fry != _lastFry)
+            {
+                if (fry == "ready" && _lastFry != "") { try { await JS.InvokeVoidAsync("patatBeep", 3); await JS.InvokeVoidAsync("patatBuzz", 3); } catch (JSException) { } }
+                _lastFry = fry;
+            }
+            return;
+        }
         _js = await JsGet<IJSObjectReference>(JS, "import", "./patat.js");
         _db = await JsGet<IJSObjectReference>(JS, "import", "./patat-db.js");
         _name = await JsGet<string?>(_js, "load", KeyName) ?? "";
         _code = await JsGet<string?>(_js, "load", KeyCode) ?? "";
         _bakker = await JsGet<string?>(_js, "load", KeyBakker) == "1";
         (_nameInput, _codeInput, _bakkerInput) = (_name, _code, _bakker);
-        if (_bakker) await LoadState();
+        // Non-bakers show the last known stock right away; the cloud/peers update it shortly after.
+        if (_bakker || !string.IsNullOrWhiteSpace(_code)) await LoadState();
+        if (!_bakker && !_hasLocalState) _engine.Reset();
         var pending = await JsGet<string?>(_js, "load", KeyPending);
         if (!string.IsNullOrEmpty(pending))
         {
@@ -314,7 +361,7 @@
     {
         _autoSend?.Cancel();
         var cts = _autoSend = new CancellationTokenSource();
-        try { await Task.Delay(700, cts.Token); } catch (TaskCanceledException) { return; }
+        try { await Task.Delay(300, cts.Token); } catch (TaskCanceledException) { return; }
         if (!_engine.State.Open) return;
         if (_draft.Values.Sum() > 0) await SendOrder(silent: true);
         else if (_engine.OrderOf(_name) is not null || _pending is not null) await Withdraw();
