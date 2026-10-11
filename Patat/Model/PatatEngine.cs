@@ -242,6 +242,16 @@ public class PatatEngine
         return null;
     }
 
+    /// <summary>Takes over orders from another state that are not in this one (e.g. placed while the baker edited).</summary>
+    public void KeepOrdersOf(PatatState other)
+    {
+        foreach (var o in other.Orders.Where(o => !State.Orders.Any(m => m.Stamp == o.Stamp)))
+        {
+            var copy = new Order { Person = o.Person, Items = new(o.Items), Note = o.Note, Stamp = o.Stamp, Round = o.Round };
+            if (PlaceOrder(copy) is { } err) State.Rejected[o.Stamp] = err;
+        }
+    }
+
     public void Cancel(string person)
     {
         var old = OrderOf(person);

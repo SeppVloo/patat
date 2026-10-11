@@ -1,6 +1,6 @@
 # Database instellen (Firebase Realtime Database)
 
-Zonder database werkt Patat via Trystero (de snackbakker moet dan online zijn). Met database wordt de voorraad online bewaard per gezinscode.
+De database is de kern van Patat: de voorraad staat online per gezinscode en elk apparaat schrijft zijn bestelling er direct in (Firebase-transactie), ook als de snackbakker niet online is. Trystero geeft wijzigingen alleen sneller door en is de terugval als de database onbereikbaar is.
 
 1. Ga naar https://console.firebase.google.com en maak een project (bijv. `patat`).
 2. **Build → Authentication → Sign-in method:** zet **Anonymous** aan.

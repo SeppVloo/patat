@@ -80,8 +80,8 @@
         else if (!_bakker && !_hasState)
         {
             <div class="pt-card">
-                <h2>⏳ Wachten op de snackbakker…</h2>
-                <p class="pt-muted">Vraag de snackbakker om de patat-app te openen met gezinscode <b>@_code</b>.</p>
+                <h2>⏳ Verbinden…</h2>
+                <p class="pt-muted">De voorraad van gezinscode <b>@_code</b> wordt opgehaald. Lukt dat niet, controleer dan je internetverbinding.</p>
             </div>
         }
         else
@@ -328,6 +328,7 @@
         _autoSend?.Cancel();
         var order = new Order { Person = _name, Items = new(_draft), Note = _note.Trim(), Stamp = Guid.NewGuid().ToString("N"), Round = _engine.State.Round };
         _draftTouched = false;
+        if (await Mutate(new { type = "order", json = System.Text.Json.JsonSerializer.Serialize(order, PatatEngine.Json) }, silent)) return;
         if (_bakker)
         {
             var err = _engine.PlaceOrder(order);
@@ -354,6 +355,7 @@
     {
         _autoSend?.Cancel();
         _draftTouched = false;
+        if (await Mutate(new { type = "cancel", person = _name }, silent: true)) return;
         if (_bakker)
         {
             _engine.Cancel(_name);
@@ -364,6 +366,75 @@
         _pendingCancel = true;
         await SavePending();
         await SendPending();
+    }
+
+    /// <summary>The database is leading: write the change straight into the shared state (no baker needed).
+    /// Returns false when the database is not reachable, so the caller falls back to the baker/peers.</summary>
+    private async Task<bool> Mutate(object op, bool silent = false)
+    {
+        if (!_dbOn || !_dbSeen || _db is null) return false;
+        var res = await JsGet<string?>(_db, "mutate", System.Text.Json.JsonSerializer.Serialize(op));
+        if (string.IsNullOrEmpty(res)) return false;
+        using var doc = System.Text.Json.JsonDocument.Parse(res);
+        var error = doc.RootElement.GetProperty("error").GetString();
+        var state = doc.RootElement.GetProperty("state").GetString();
+        _pending = null;
+        _pendingCancel = false;
+        await SavePending();
+        if (!string.IsNullOrEmpty(state)) await TakeCloudState(state);
+        if (!string.IsNullOrEmpty(error)) Show("❌ " + error, true);
+        else if (!silent) Show("👍 Bestelling staat erin!");
+        StateHasChanged();
+        return true;
+    }
+
+    private async Task TakeCloudState(string json)
+    {
+        if (!_bakker) { await OnState(json); return; }
+        if (json == _lastJson || !_engine.Load(json)) return;
+        _lastJson = json;
+        await JsVoid(_js, "save", StateKey, json);
+        await JsVoid(_js, "broadcast", json, null);
+        LoadDraft();
+    }
+
+    /// <summary>Called from the database transaction: applies an operation to the current cloud state.</summary>
+    [JSInvokable]
+    public string ApplyOp(string current, string opJson)
+    {
+        static string Result(string state, string error) => System.Text.Json.JsonSerializer.Serialize(new { state, error });
+        using var doc = System.Text.Json.JsonDocument.Parse(opJson);
+        var op = doc.RootElement;
+        var engine = new PatatEngine();
+        if (string.IsNullOrWhiteSpace(current) || !engine.Load(current))
+        {
+            // Empty cloud: only a full state from the baker may fill it.
+            if (op.GetProperty("type").GetString() != "state") return Result("", "Er is nog geen voorraad voor deze gezinscode.");
+            return Result(op.GetProperty("json").GetString() ?? "", "");
+        }
+        string? error = null;
+        switch (op.GetProperty("type").GetString())
+        {
+            case "order":
+                var order = System.Text.Json.JsonSerializer.Deserialize<Order>(op.GetProperty("json").GetString()!, PatatEngine.Json)!;
+                if (engine.OrderOf(order.Person)?.Stamp == order.Stamp) break;
+                error = engine.PlaceOrder(order);
+                break;
+            case "cancel":
+                engine.Cancel(op.GetProperty("person").GetString() ?? "");
+                break;
+            case "state":
+                // Baker change: if somebody ordered in between, keep those orders on top of the baker's change.
+                var mine = new PatatEngine();
+                if (!mine.Load(op.GetProperty("json").GetString())) return Result("", "Wijziging kon niet gelezen worden.");
+                if (engine.State.Version != op.GetProperty("baseVersion").GetInt64()) mine.KeepOrdersOf(engine.State);
+                mine.State.Version = Math.Max(mine.State.Version, engine.State.Version);
+                engine = mine;
+                break;
+        }
+        if (error is not null) return Result("", error);
+        engine.State.Version++;
+        return Result(engine.ToJson(), "");
     }
 
     private async Task SavePending()
@@ -436,7 +507,8 @@
         await JsVoid(_js, "save", StateKey, json);
         await JsVoid(_js, "broadcast", json, null);
         // Until the cloud state has been read, never overwrite it: the cloud is leading.
-        if (_dbOn && _dbSeen) await JsVoid(_db, "save", json);
+        if (_dbOn && _dbSeen && !await Mutate(new { type = "state", json, baseVersion = _engine.State.Version - 1 }, silent: true))
+            await JsVoid(_db, "save", json);
         StateHasChanged();
     }
 
@@ -454,13 +526,19 @@
         {
             // Stock was moved to this new family code: it replaces whatever is stored there.
             _forceUpload = false;
+            _dbSeen = false;
             await Publish();
+            _dbSeen = true;
+            await JsVoid(_db, "save", _engine.ToJson());
             return;
         }
         // The cloud is leading: take over every state there that this device did not write itself,
         // regardless of version numbers (another device may have counted higher while offline).
+        var before = string.Join(",", _engine.State.Orders.Select(o => o.Stamp).Order());
         if (!string.IsNullOrWhiteSpace(json) && json != _lastJson && _engine.Load(json))
         {
+            // Someone else's order came in: undo only covers the baker's own changes, so start over.
+            if (before != string.Join(",", _engine.State.Orders.Select(o => o.Stamp).Order())) _undo.Clear();
             _lastJson = json;
             // The database has a newer version (e.g. changed on another baker device).
             await JsVoid(_js, "save", StateKey, json);

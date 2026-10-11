@@ -128,6 +128,26 @@ export async function closeFamily(oldCode) {
     } catch (e) { console.warn("Oude gezinscode sluiten mislukt", e); }
 }
 
+// Every device changes the shared state itself in a transaction: .NET (ApplyOp) applies the operation to
+// the current cloud state; Firebase retries when another device wrote in between, so nothing is lost.
+// Returns JSON {ok, state, error}; null when the database is not reachable.
+export async function mutate(opJson) {
+    if (!stateRef || !dotnet) return null;
+    let error = "";
+    try {
+        const r = await fb.runTransaction(stateRef, cur => {
+            const res = JSON.parse(dotnet.invokeMethod("ApplyOp", typeof cur === "string" ? cur : "", opJson));
+            error = res.error || "";
+            return res.error ? undefined : res.state;
+        }, { applyLocally: false });
+        const state = r.snapshot.val() ?? "";
+        return JSON.stringify({ ok: r.committed, state, error: r.committed ? "" : error });
+    } catch (e) {
+        console.warn("Transactie mislukt", e);
+        return null;
+    }
+}
+
 export async function save(json) { if (stateRef) await fb.set(stateRef, json); }
 export async function order(json) { if (inboxRef) await fb.push(inboxRef, { type: "order", json }); }
 export async function cancel(person) { if (inboxRef) await fb.push(inboxRef, { type: "cancel", person }); }
